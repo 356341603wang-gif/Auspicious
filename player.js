@@ -1,39 +1,32 @@
 import {
+  artworkLayout,
   buildLyricTimeline,
   buildMeasuredLyricTimeline,
-  createLotusGeometry,
   formatTime,
   lyricStateAtTime,
+  outwardRingProgress,
   progressRatio,
   seekFromPointer,
-  shouldShowLyrics,
-  visualEnergy,
-} from "./player-core.js?v=7";
+} from "./player-core.js?v=10";
 import {
   CHINESE_LYRIC_GROUPS,
   LYRIC_CYCLE_TIMINGS,
   OPENING_MANTRA_GROUPS,
   OPENING_MANTRA_TIMINGS,
-} from "./lyrics.js?v=7";
+} from "./lyrics.js?v=10";
 
+const ARTWORK_URL = "./manjushri-statue.jpg";
 const FALLBACK_DURATION = 438.079;
-const root = document.documentElement;
-const intro = document.querySelector("#intro");
-const audio = document.querySelector("#audio");
-const canvas = document.querySelector("#ambientCanvas");
-const context = canvas.getContext("2d", { alpha: true });
-const visualStage = document.querySelector("#visualStage");
-const playButton = document.querySelector("#playButton");
-const muteButton = document.querySelector("#muteButton");
-const retryButton = document.querySelector("#retryButton");
-const progress = document.querySelector("#progress");
-const currentTimeLabel = document.querySelector("#currentTime");
-const durationLabel = document.querySelector("#duration");
-const statusMessage = document.querySelector("#statusMessage");
-const lyricCycle = document.querySelector("#lyricCycle");
-const lyricLines = document.querySelector("#lyricLines");
-const lyricHint = document.querySelector("#lyricHint");
-const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const PLAY_ICON = `
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"></path>
+  </svg>`;
+const PAUSE_ICON = `
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="14" y="3" width="5" height="18" rx="1"></rect>
+    <rect x="5" y="3" width="5" height="18" rx="1"></rect>
+  </svg>`;
+
 const lyricTimeline = [
   ...buildLyricTimeline(
     OPENING_MANTRA_GROUPS,
@@ -46,28 +39,40 @@ const lyricTimeline = [
     LYRIC_CYCLE_TIMINGS,
   ),
 ];
+const VOCAL_PHRASE_STARTS = lyricTimeline
+  .flatMap((cue) => cue.lineStarts ?? [cue.start])
+  .sort((left, right) => left - right);
 
-let audioContext;
-let analyser;
-let frequencyData;
+const stage = document.querySelector("#resonanceStage");
+const canvas = document.querySelector("#resonanceCanvas");
+const audio = document.querySelector("#resonanceAudio");
+const listen = document.querySelector("#resonanceListen");
+const listenIcon = listen.querySelector(".resonance-listen-icon");
+const listenLabel = document.querySelector("#resonanceListenLabel");
+const listenTime = document.querySelector("#resonanceListenTime");
+const progress = document.querySelector("#resonanceProgress");
+const prayer = document.querySelector("#lyricsPanel");
+const lyricRule = document.querySelector("#lyricRule");
+const previousLyric = document.querySelector("#previousLyric");
+const currentLyric = document.querySelector("#currentLyric");
+const currentLyricBase = currentLyric.querySelector(".resonance-prayer-text-base");
+const currentLyricFill = currentLyric.querySelector(".resonance-prayer-text-fill");
+const nextLyric = document.querySelector("#nextLyric");
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+
+let audioGraph;
+let image;
+let artworkLayer;
+let backgroundLayer;
 let animationFrame = 0;
-let isVisible = !document.hidden;
-let lastFrame = 0;
+let canvasStartTime = performance.now();
+let disposed = false;
 let isSeeking = false;
-let renderedLyricGroup = -1;
-let renderedLyricCycle = -1;
-let renderedLyricLine = -1;
-let renderedLyricSection = "";
-let activeLyricElement;
-
-const particles = Array.from({ length: 120 }, (_, index) => ({
-  angle: (index * 2.3999632297) % (Math.PI * 2),
-  orbit: 0.22 + ((index * 37) % 100) / 100 * 0.42,
-  drift: 0.000025 + ((index * 19) % 13) * 0.000002,
-  size: 0.45 + ((index * 23) % 10) / 10 * 1.25,
-  phase: ((index * 29) % 100) / 100 * Math.PI * 2,
-  opacity: 0.08 + ((index * 31) % 100) / 100 * 0.22,
-}));
+let audioFailed = false;
+let renderedLyricKey = "";
+let renderedDotIndex = -1;
+let smoothedEnergy = 0;
+let adaptivePeak = 0.16;
 
 function trackDuration() {
   return Number.isFinite(audio.duration) && audio.duration > 0
@@ -75,109 +80,130 @@ function trackDuration() {
     : FALLBACK_DURATION;
 }
 
-function renderLyricGroup(state) {
-  if (
-    state.groupIndex === renderedLyricGroup &&
-    state.cycle === renderedLyricCycle &&
-    state.phase === renderedLyricSection
+function formatClock(seconds) {
+  const value = formatTime(seconds);
+  return value.split(":").length === 2 ? value.padStart(5, "0") : value;
+}
+
+function cueIndexAtTime(currentTime) {
+  let cueIndex = 0;
+  while (
+    cueIndex + 1 < lyricTimeline.length &&
+    lyricTimeline[cueIndex + 1].start <= currentTime
   ) {
-    return;
+    cueIndex += 1;
   }
+  return cueIndex;
+}
 
-  const lines = state.phase === "opening"
-    ? OPENING_MANTRA_GROUPS[state.groupIndex]
-    : CHINESE_LYRIC_GROUPS[state.groupIndex];
+function visibleLyricState(currentTime) {
+  const state = lyricStateAtTime(currentTime, lyricTimeline);
+  const cueIndex = cueIndexAtTime(currentTime);
+  const cue = lyricTimeline[cueIndex] ?? lyricTimeline[0];
+  const lineIndex = Math.min(state.lineIndex, cue.lines.length - 1);
+  const previousCue = lyricTimeline[Math.max(0, cueIndex - 1)];
+  const nextCue = lyricTimeline[Math.min(lyricTimeline.length - 1, cueIndex + 1)];
+
+  return {
+    ...state,
+    cue,
+    cueIndex,
+    lineIndex,
+    current: cue.lines[lineIndex] ?? "",
+    previous:
+      lineIndex > 0
+        ? cue.lines[lineIndex - 1]
+        : previousCue === cue
+          ? ""
+          : previousCue.lines.at(-1) ?? "",
+    next:
+      lineIndex + 1 < cue.lines.length
+        ? cue.lines[lineIndex + 1]
+        : nextCue === cue
+          ? ""
+          : nextCue.lines[0] ?? "",
+  };
+}
+
+function buildLyricRule() {
   const fragment = document.createDocumentFragment();
-  lines.forEach((line) => {
-    const paragraph = document.createElement("p");
-    paragraph.textContent = line;
-    fragment.append(paragraph);
-  });
-  lyricLines.replaceChildren(fragment);
-  renderedLyricGroup = state.groupIndex;
-  renderedLyricCycle = state.cycle;
-  renderedLyricSection = state.phase;
-  renderedLyricLine = -1;
-  activeLyricElement = undefined;
+  for (let index = 0; index < CHINESE_LYRIC_GROUPS.length; index += 1) {
+    fragment.append(document.createElement("i"));
+  }
+  lyricRule.replaceChildren(fragment);
 }
 
-function updateLyricState() {
-  const state = lyricStateAtTime(audio.currentTime, lyricTimeline);
-  renderLyricGroup(state);
-
-  const showLyrics = shouldShowLyrics(
-    audio.currentTime,
-    audio.paused,
-    state.phase,
-  );
-  root.dataset.lyricsVisible = String(showLyrics);
-  root.dataset.lyricsPhase = state.phase;
-
-  if (state.phase === "opening") {
-    lyricCycle.textContent = `加倍咒 · ${state.groupIndex + 1} / 3`;
-    lyricHint.textContent = "三遍后进入八圣吉祥颂正文";
-  } else if (state.phase === "prelude") {
-    lyricCycle.textContent = "音乐引子";
-    lyricHint.textContent = "正文即将开始";
-  } else if (state.phase === "interlude") {
-    lyricCycle.textContent = `第 ${state.cycle} 遍`;
-    lyricHint.textContent = "稍息 · 下一遍即将开始";
-  } else if (state.phase === "outro") {
-    lyricCycle.textContent = "三遍圆满";
-    lyricHint.textContent = "吉祥圆满";
-  } else {
-    lyricCycle.textContent = `第 ${state.cycle} 遍`;
-    lyricHint.textContent = `${state.groupIndex + 1} / ${CHINESE_LYRIC_GROUPS.length}`;
+function updateLyricUi(currentTime = audio.currentTime) {
+  const state = visibleLyricState(currentTime);
+  const key = `${state.cueIndex}-${state.lineIndex}`;
+  if (key !== renderedLyricKey) {
+    previousLyric.textContent = state.previous;
+    currentLyricBase.textContent = state.current;
+    currentLyricFill.textContent = state.current;
+    nextLyric.textContent = state.next;
+    currentLyric.classList.remove("is-entering");
+    void currentLyric.offsetWidth;
+    currentLyric.classList.add("is-entering");
+    renderedLyricKey = key;
   }
 
-  const paragraphs = lyricLines.querySelectorAll("p");
-  if (state.active && renderedLyricLine !== state.lineIndex) {
-    paragraphs.forEach((paragraph, index) => {
-      paragraph.classList.toggle("is-active", index === state.lineIndex);
-      paragraph.classList.toggle("is-past", index < state.lineIndex);
+  stage.style.setProperty(
+    "--prayer-fill",
+    `${(state.lineProgress * 100).toFixed(3)}%`,
+  );
+  prayer.classList.toggle("is-resting", !state.active);
+
+  const dotIndex = state.cue.section === "opening"
+    ? Math.min(state.cue.groupIndex, CHINESE_LYRIC_GROUPS.length - 1)
+    : state.cue.groupIndex;
+  if (dotIndex !== renderedDotIndex) {
+    lyricRule.querySelectorAll("i").forEach((dot, index) => {
+      dot.classList.toggle("is-active", index === dotIndex);
     });
-    renderedLyricLine = state.lineIndex;
-    activeLyricElement = paragraphs[state.lineIndex];
-  } else if (!state.active && renderedLyricLine !== -1) {
-    paragraphs.forEach((paragraph) => paragraph.classList.remove("is-active"));
-    renderedLyricLine = -1;
-    activeLyricElement = undefined;
+    renderedDotIndex = dotIndex;
   }
-
-  activeLyricElement?.style.setProperty(
-    "--line-progress",
-    `${(state.lineProgress * 100).toFixed(2)}%`,
-  );
 }
 
-function updateMediaState() {
+function updateMediaUi() {
   const duration = trackDuration();
   const ratio = progressRatio(audio.currentTime, duration);
-  progress.max = String(duration);
-  progress.value = String(audio.currentTime);
-  root.style.setProperty("--progress", `${ratio * 100}%`);
-  currentTimeLabel.textContent = formatTime(audio.currentTime);
-  durationLabel.textContent = formatTime(duration);
-
   const isPlaying = !audio.paused;
-  root.dataset.playing = String(isPlaying);
-  playButton.setAttribute("aria-label", isPlaying ? "暂停音频" : "播放音频");
-  updateLyricState();
+  progress.max = String(duration);
+  if (!isSeeking) progress.value = String(audio.currentTime);
+  progress.style.setProperty("--resonance-progress", `${ratio * 100}%`);
+  listen.style.setProperty("--listen-progress", `${ratio * 100}%`);
+  listenTime.textContent = audioFailed
+    ? "加载失败，点击重试"
+    : `${formatClock(audio.currentTime)} / ${formatClock(duration)}`;
+  listenLabel.textContent = audioFailed
+    ? "重新播放"
+    : isPlaying
+      ? "暂停播放"
+      : "开始聆听";
+  listenIcon.innerHTML = isPlaying ? PAUSE_ICON : PLAY_ICON;
+  listen.setAttribute("aria-label", isPlaying ? "暂停唱诵" : "聆听唱诵");
+  listen.setAttribute("aria-pressed", String(isPlaying));
+  stage.classList.toggle("is-playing", isPlaying);
+  updateLyricUi(audio.currentTime);
 }
 
 async function ensureAudioGraph() {
-  if (audioContext || reducedMotion.matches) return;
+  if (audioGraph) return audioGraph;
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) return;
-
-  audioContext = new AudioContextClass();
-  const source = audioContext.createMediaElementSource(audio);
-  analyser = audioContext.createAnalyser();
-  analyser.fftSize = 256;
-  analyser.smoothingTimeConstant = 0.88;
+  if (!AudioContextClass) return undefined;
+  const context = new AudioContextClass();
+  const analyser = context.createAnalyser();
+  analyser.fftSize = 512;
+  analyser.smoothingTimeConstant = 0.86;
+  const source = context.createMediaElementSource(audio);
   source.connect(analyser);
-  analyser.connect(audioContext.destination);
-  frequencyData = new Uint8Array(analyser.frequencyBinCount);
+  analyser.connect(context.destination);
+  audioGraph = {
+    context,
+    analyser,
+    frequencyData: new Uint8Array(analyser.frequencyBinCount),
+  };
+  return audioGraph;
 }
 
 async function togglePlayback() {
@@ -187,280 +213,346 @@ async function togglePlayback() {
   }
 
   try {
-    await ensureAudioGraph();
-    if (audioContext?.state === "suspended") await audioContext.resume();
-  } catch {
-    analyser = undefined;
-    frequencyData = undefined;
-  }
-
-  try {
+    const graph = await ensureAudioGraph();
+    if (graph?.context.state === "suspended") await graph.context.resume();
+    if (audioFailed) audio.load();
+    audioFailed = false;
     await audio.play();
-    statusMessage.textContent = "";
-    retryButton.hidden = true;
+    canvasStartTime = Math.min(canvasStartTime, performance.now() - 2200);
+    requestCanvasRender();
   } catch {
-    statusMessage.textContent = "";
+    audioFailed = true;
+    updateMediaUi();
   }
 }
 
-function updateMuteState() {
-  const muted = audio.muted || audio.volume === 0;
-  muteButton.setAttribute("aria-pressed", String(muted));
-  muteButton.setAttribute("aria-label", muted ? "取消静音" : "静音");
+function easeOutExpo(value) {
+  if (value >= 1) return 1;
+  return 1 - 2 ** (-10 * value);
 }
 
-function averageBand(start, end) {
-  if (!frequencyData) return 0;
-  let sum = 0;
-  const safeEnd = Math.min(end, frequencyData.length);
-  for (let index = start; index < safeEnd; index += 1) {
-    sum += frequencyData[index];
+function phraseStartPulse(currentTime) {
+  let pulse = 0;
+  for (const cue of VOCAL_PHRASE_STARTS) {
+    const offset = currentTime - cue;
+    if (offset < -0.08) break;
+    if (offset > 0.52) continue;
+    const progress = (offset + 0.08) / 0.6;
+    const value = progress < 0.22
+      ? progress / 0.22
+      : Math.max(0, 1 - (progress - 0.22) / 0.78);
+    pulse = Math.max(pulse, value);
   }
-  return safeEnd > start ? sum / (safeEnd - start) / 255 : 0;
+  return pulse;
 }
 
-function resizeCanvas() {
-  const scale = Math.min(window.devicePixelRatio || 1, 2);
-  const width = Math.max(1, Math.round(window.innerWidth * scale));
-  const height = Math.max(1, Math.round(window.innerHeight * scale));
-  if (canvas.width !== width || canvas.height !== height) {
-    canvas.width = width;
-    canvas.height = height;
-  }
-  context.setTransform(scale, 0, 0, scale, 0, 0);
-}
+function buildArtworkLayer(sourceImage, width, height, pixelRatio) {
+  const layer = document.createElement("canvas");
+  layer.width = Math.max(1, Math.round(width * pixelRatio));
+  layer.height = Math.max(1, Math.round(height * pixelRatio));
+  const context = layer.getContext("2d");
+  if (!context) return layer;
+  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
 
-function drawPetal(centerX, centerY, radius, angle, energy, timestamp) {
-  const breathe = Math.sin(timestamp * 0.00042 + angle * 2) * 3;
-  const inner = radius * 0.72;
-  const outer = radius + breathe + energy * 14;
-  const spread = 0.14 + energy * 0.025;
-  const startX = centerX + Math.cos(angle) * inner;
-  const startY = centerY + Math.sin(angle) * inner;
-  const tipX = centerX + Math.cos(angle) * outer;
-  const tipY = centerY + Math.sin(angle) * outer;
-
-  context.beginPath();
-  context.moveTo(startX, startY);
-  context.quadraticCurveTo(
-    centerX + Math.cos(angle - spread) * radius * 0.92,
-    centerY + Math.sin(angle - spread) * radius * 0.92,
-    tipX,
-    tipY,
+  const layout = artworkLayout(
+    width,
+    height,
+    sourceImage.naturalWidth,
+    sourceImage.naturalHeight,
   );
-  context.quadraticCurveTo(
-    centerX + Math.cos(angle + spread) * radius * 0.92,
-    centerY + Math.sin(angle + spread) * radius * 0.92,
-    startX,
-    startY,
+  context.filter = "brightness(1.08) saturate(1.1) contrast(1.1)";
+  const sourceCrop = {
+    x: sourceImage.naturalWidth * 0.09375,
+    y: sourceImage.naturalHeight * 0.15,
+    width: sourceImage.naturalWidth * 0.8125,
+    height: sourceImage.naturalHeight * 0.8125,
+  };
+  context.drawImage(
+    sourceImage,
+    sourceCrop.x,
+    sourceCrop.y,
+    sourceCrop.width,
+    sourceCrop.height,
+    layout.destinationX,
+    layout.destinationY,
+    layout.destinationWidth,
+    layout.destinationHeight,
   );
-  context.strokeStyle = `rgba(192, 142, 58, ${0.11 + energy * 0.27})`;
-  context.lineWidth = 0.75 + energy * 0.7;
-  context.stroke();
+  context.filter = "none";
+
+  context.globalCompositeOperation = "destination-in";
+  const horizontalMask = context.createLinearGradient(
+    layout.destinationX,
+    0,
+    layout.destinationX + layout.destinationWidth,
+    0,
+  );
+  horizontalMask.addColorStop(0, "rgba(0,0,0,0)");
+  horizontalMask.addColorStop(0.05, "rgba(0,0,0,0.24)");
+  horizontalMask.addColorStop(0.12, "rgba(0,0,0,0.82)");
+  horizontalMask.addColorStop(0.18, "rgba(0,0,0,1)");
+  horizontalMask.addColorStop(0.84, "rgba(0,0,0,1)");
+  horizontalMask.addColorStop(0.94, "rgba(0,0,0,0.7)");
+  horizontalMask.addColorStop(1, "rgba(0,0,0,0)");
+  context.fillStyle = horizontalMask;
+  context.fillRect(0, 0, width, height);
+
+  const verticalMask = context.createLinearGradient(0, 0, 0, height);
+  verticalMask.addColorStop(0, "rgba(0,0,0,0.78)");
+  verticalMask.addColorStop(0.08, "rgba(0,0,0,1)");
+  verticalMask.addColorStop(0.82, "rgba(0,0,0,1)");
+  verticalMask.addColorStop(1, "rgba(0,0,0,0.08)");
+  context.fillStyle = verticalMask;
+  context.fillRect(0, 0, width, height);
+  return layer;
 }
 
-function drawAmbient(timestamp) {
-  if (!isVisible) return;
+function buildBackgroundLayer(width, height) {
+  const layer = document.createElement("canvas");
+  layer.width = Math.max(1, Math.round(width));
+  layer.height = Math.max(1, Math.round(height));
+  const context = layer.getContext("2d");
+  if (!context) return layer;
 
-  const mobile = window.innerWidth <= 760;
-  if (mobile && timestamp - lastFrame < 32) {
-    animationFrame = requestAnimationFrame(drawAmbient);
-    return;
+  context.fillStyle = "#1c1d19";
+  context.fillRect(0, 0, width, height);
+
+  const olive = context.createRadialGradient(
+    width * 0.14,
+    height * 0.16,
+    0,
+    width * 0.14,
+    height * 0.16,
+    Math.max(width, height) * 0.86,
+  );
+  olive.addColorStop(0, "rgba(91, 97, 61, 0.5)");
+  olive.addColorStop(0.5, "rgba(43, 46, 32, 0.24)");
+  olive.addColorStop(1, "rgba(28, 29, 25, 0)");
+  context.fillStyle = olive;
+  context.fillRect(0, 0, width, height);
+
+  const warmth = context.createRadialGradient(
+    width * 0.52,
+    height * 0.43,
+    0,
+    width * 0.52,
+    height * 0.43,
+    Math.max(width, height) * 0.62,
+  );
+  warmth.addColorStop(0, "rgba(226, 165, 79, 0.28)");
+  warmth.addColorStop(0.34, "rgba(112, 80, 40, 0.16)");
+  warmth.addColorStop(0.72, "rgba(54, 49, 36, 0.08)");
+  warmth.addColorStop(1, "rgba(28, 29, 25, 0)");
+  context.fillStyle = warmth;
+  context.fillRect(0, 0, width, height);
+
+  const horizon = context.createLinearGradient(0, 0, 0, height);
+  horizon.addColorStop(0, "rgba(17, 18, 15, 0.04)");
+  horizon.addColorStop(0.58, "rgba(32, 31, 24, 0.03)");
+  horizon.addColorStop(1, "rgba(13, 14, 12, 0.82)");
+  context.fillStyle = horizon;
+  context.fillRect(0, 0, width, height);
+  return layer;
+}
+
+function renderCanvas(timestamp) {
+  if (disposed || !image) return;
+  const context = canvas.getContext("2d");
+  if (!context) return;
+  const bounds = stage.getBoundingClientRect();
+  const width = bounds.width;
+  const height = bounds.height;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  if (
+    canvas.width !== Math.round(width * dpr) ||
+    canvas.height !== Math.round(height * dpr) ||
+    !artworkLayer ||
+    !backgroundLayer
+  ) {
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    artworkLayer = buildArtworkLayer(image, width, height, dpr);
+    backgroundLayer = buildBackgroundLayer(width, height);
   }
-  lastFrame = timestamp;
-  updateLyricState();
-  resizeCanvas();
 
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-  const centerX = mobile ? width * 0.5 : width * 0.61;
-  const centerY = mobile ? height * 0.54 : height * 0.49;
-  const radius = Math.min(width, height) * (mobile ? 0.37 : 0.42);
-
-  let low = 0;
-  let mid = 0;
-  let high = 0;
-  if (analyser && !audio.paused && !reducedMotion.matches) {
-    analyser.getByteFrequencyData(frequencyData);
-    low = averageBand(0, 12);
-    mid = averageBand(12, 40);
-    high = averageBand(40, 86);
-  }
-  const energy = visualEnergy(low, mid, high, !audio.paused);
-  root.style.setProperty("--energy", energy.toFixed(3));
-
+  context.setTransform(dpr, 0, 0, dpr, 0, 0);
   context.clearRect(0, 0, width, height);
-  context.lineCap = "round";
+  const elapsed = Math.max(0, timestamp - canvasStartTime);
+  const time = elapsed / 1000;
+  const entrance = reducedMotion.matches
+    ? 1
+    : easeOutExpo(Math.min(1, elapsed / 1900));
+  const isPlaying = !audio.paused;
+  let audioLevel = 0;
 
-  const lotus = createLotusGeometry(8, radius);
-  lotus.forEach((point) => {
-    drawPetal(centerX, centerY, radius, point.angle, energy, timestamp);
-  });
+  if (isPlaying && audioGraph) {
+    audioGraph.analyser.getByteFrequencyData(audioGraph.frequencyData);
+    let total = 0;
+    const sampleCount = Math.min(audioGraph.frequencyData.length, 84);
+    for (let index = 0; index < sampleCount; index += 1) {
+      total += audioGraph.frequencyData[index];
+    }
+    const rawEnergy = total / sampleCount / 255;
+    adaptivePeak = Math.max(rawEnergy, adaptivePeak * 0.997);
+    const normalizedEnergy = Math.min(1, rawEnergy / Math.max(0.08, adaptivePeak * 0.86));
+    smoothedEnergy += (normalizedEnergy - smoothedEnergy) * 0.12;
+    audioLevel = smoothedEnergy;
+  } else {
+    smoothedEnergy += (0 - smoothedEnergy) * 0.04;
+  }
 
-  const ringCount = 4;
-  for (let index = 0; index < ringCount; index += 1) {
-    const drift = Math.sin(timestamp * 0.0002 + index) * 4;
+  context.drawImage(backgroundLayer, 0, 0, width, height);
+  const haloX = width * (0.52 + Math.sin(time * 0.11) * 0.004);
+  const haloY = height * (0.43 + Math.cos(time * 0.09) * 0.004);
+  const phrasePulse = isPlaying ? phraseStartPulse(audio.currentTime) : 0;
+  const motionBoost = 1 + audioLevel * 0.65 + phrasePulse * 1.4;
+
+  context.save();
+  context.globalCompositeOperation = "screen";
+  for (let ring = 0; ring < 12; ring += 1) {
+    const ringProgress = outwardRingProgress(ring, 12, time);
+    const radius = Math.min(width, height) * (0.16 + ringProgress * 0.72) * (0.5 + entrance * 0.5);
+    const segments = 80;
     context.beginPath();
-    context.arc(
-      centerX,
-      centerY,
-      radius * (0.82 + index * 0.085) + drift + energy * 8,
-      timestamp * 0.000025 * (index % 2 ? -1 : 1),
-      Math.PI * (1.15 + index * 0.14),
-    );
-    context.strokeStyle = `rgba(212, 184, 149, ${0.045 + index * 0.013 + energy * 0.12})`;
-    context.lineWidth = 0.7;
+    for (let segment = 0; segment <= segments; segment += 1) {
+      const angle = (segment / segments) * Math.PI * 2;
+      const wave =
+        Math.sin(angle * 3 + time * 0.07 + ring * 0.23) * (2.2 + ringProgress * 3.4) +
+        Math.cos(angle * 5 - time * 0.045) * 1.6;
+      const x = haloX + Math.cos(angle) * (radius + wave * motionBoost) * 1.08;
+      const y = haloY + Math.sin(angle) * (radius + wave * motionBoost) * 0.88;
+      if (segment === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    }
+    context.closePath();
+    const ringVisibility = Math.sin(ringProgress * Math.PI) * (1 - ringProgress * 0.34);
+    context.strokeStyle = `rgba(241, 188, 98, ${ringVisibility * (0.085 + audioLevel * 0.045)})`;
+    context.lineWidth = (ring % 3 === 0 ? 1.05 : 0.52) * (1 - ringProgress * 0.38);
     context.stroke();
   }
+  context.restore();
 
-  const visibleParticles = mobile ? 58 : particles.length;
-  for (let index = 0; index < visibleParticles; index += 1) {
-    const particle = particles[index];
-    const angle = particle.angle + timestamp * particle.drift;
-    const pulse = Math.sin(timestamp * 0.00048 + particle.phase);
-    const x = centerX + Math.cos(angle) * width * particle.orbit;
-    const y = centerY + Math.sin(angle) * height * particle.orbit * 0.72 + pulse * 8;
-    const size = particle.size + energy * (index % 5 === 0 ? 1.6 : 0.45);
-    context.beginPath();
-    context.arc(x, y, size, 0, Math.PI * 2);
-    context.fillStyle = `rgba(232, 220, 199, ${particle.opacity + energy * 0.18})`;
-    context.fill();
+  context.save();
+  context.globalAlpha = 0.18 + entrance * 0.82;
+  const scale = reducedMotion.matches ? 1 : 1.055 - entrance * 0.055;
+  context.translate(width * 0.5, height * 0.47);
+  context.scale(scale, scale);
+  context.translate(-width * 0.5, -height * 0.47);
+  context.drawImage(artworkLayer, 0, 0, width, height);
+  context.restore();
+
+  if (isPlaying) {
+    updateMediaUi();
   }
-
-  animationFrame = requestAnimationFrame(drawAmbient);
+  if (!reducedMotion.matches || elapsed < 2100 || isPlaying) {
+    animationFrame = requestAnimationFrame(renderCanvas);
+  }
 }
 
-function startAnimation() {
+function requestCanvasRender() {
   cancelAnimationFrame(animationFrame);
-  if (isVisible) animationFrame = requestAnimationFrame(drawAmbient);
+  animationFrame = requestAnimationFrame(renderCanvas);
 }
 
-function updateParallax(event) {
-  if (reducedMotion.matches || event.pointerType === "touch") return;
-  const x = event.clientX / window.innerWidth - 0.5;
-  const y = event.clientY / window.innerHeight - 0.5;
-  root.style.setProperty("--image-x", `${x * 7}px`);
-  root.style.setProperty("--image-y", `${y * 5}px`);
-  root.style.setProperty("--orbit-x", `${x * -10}px`);
-  root.style.setProperty("--orbit-y", `${y * -8}px`);
+async function loadArtwork() {
+  const sourceImage = new Image();
+  sourceImage.decoding = "async";
+  sourceImage.src = ARTWORK_URL;
+  if (!sourceImage.complete) {
+    await new Promise((resolve, reject) => {
+      sourceImage.addEventListener("load", resolve, { once: true });
+      sourceImage.addEventListener("error", reject, { once: true });
+    });
+  }
+  try { await sourceImage.decode(); } catch {}
+  image = sourceImage;
+  artworkLayer = undefined;
+  backgroundLayer = undefined;
+  canvasStartTime = performance.now();
+  requestCanvasRender();
 }
-
-function resetParallax() {
-  root.style.setProperty("--image-x", "0px");
-  root.style.setProperty("--image-y", "0px");
-  root.style.setProperty("--orbit-x", "0px");
-  root.style.setProperty("--orbit-y", "0px");
-}
-
-playButton.addEventListener("click", togglePlayback);
-
-muteButton.addEventListener("click", () => {
-  audio.muted = !audio.muted;
-  updateMuteState();
-});
-
-progress.addEventListener("input", () => {
-  audio.currentTime = Number(progress.value);
-  updateMediaState();
-});
-
-progress.addEventListener("change", () => {
-  audio.currentTime = Number(progress.value);
-  updateMediaState();
-});
 
 function seekToPointer(event) {
-  const rect = progress.getBoundingClientRect();
-  audio.currentTime = seekFromPointer(
+  const bounds = progress.getBoundingClientRect();
+  const nextTime = seekFromPointer(
     event.clientX,
-    rect.left,
-    rect.width,
+    bounds.left,
+    bounds.width,
     trackDuration(),
   );
-  updateMediaState();
+  audio.currentTime = nextTime;
+  progress.value = String(nextTime);
+  updateMediaUi();
 }
 
+listen.addEventListener("click", () => void togglePlayback());
+progress.addEventListener("input", () => {
+  audio.currentTime = Number(progress.value);
+  updateMediaUi();
+});
 progress.addEventListener("pointerdown", (event) => {
   isSeeking = true;
   progress.setPointerCapture?.(event.pointerId);
   seekToPointer(event);
 });
-
 progress.addEventListener("pointermove", (event) => {
   if (isSeeking) seekToPointer(event);
 });
-
 progress.addEventListener("pointerup", (event) => {
   if (!isSeeking) return;
   seekToPointer(event);
   isSeeking = false;
   progress.releasePointerCapture?.(event.pointerId);
 });
-
-progress.addEventListener("pointercancel", () => {
-  isSeeking = false;
-});
-
+progress.addEventListener("pointercancel", () => { isSeeking = false; });
 progress.addEventListener("click", seekToPointer);
 
-retryButton.addEventListener("click", async () => {
-  retryButton.hidden = true;
-  statusMessage.textContent = "正在重新加载";
-  audio.load();
-  await togglePlayback();
-});
-
-document.addEventListener("pointermove", updateParallax, { passive: true });
-document.addEventListener("pointerleave", resetParallax);
-
 document.addEventListener("keydown", (event) => {
-  const interactive = event.target.closest("button, input, a");
+  const interactive = event.target.closest?.("button, input, a, textarea, select");
   if (event.code === "Space" && !interactive) {
     event.preventDefault();
     void togglePlayback();
   }
-  if (event.key === "ArrowLeft" && !interactive) {
-    audio.currentTime = Math.max(0, audio.currentTime - 5);
-    updateMediaState();
-  }
-  if (event.key === "ArrowRight" && !interactive) {
-    audio.currentTime = Math.min(trackDuration(), audio.currentTime + 5);
-    updateMediaState();
-  }
 });
 
-audio.addEventListener("loadedmetadata", () => {
-  root.dataset.audioReady = "true";
-  statusMessage.textContent = "";
-  updateMediaState();
+audio.addEventListener("loadedmetadata", updateMediaUi);
+audio.addEventListener("durationchange", updateMediaUi);
+audio.addEventListener("timeupdate", updateMediaUi);
+audio.addEventListener("play", () => {
+  audioFailed = false;
+  updateMediaUi();
+  requestCanvasRender();
 });
-audio.addEventListener("durationchange", updateMediaState);
-audio.addEventListener("timeupdate", updateMediaState);
-audio.addEventListener("play", updateMediaState);
-audio.addEventListener("pause", updateMediaState);
+audio.addEventListener("pause", updateMediaUi);
 audio.addEventListener("ended", () => {
-  statusMessage.textContent = "播放完成";
-  updateMediaState();
+  audio.currentTime = 0;
+  updateMediaUi();
 });
-audio.addEventListener("volumechange", updateMuteState);
 audio.addEventListener("error", () => {
-  root.dataset.audioReady = "false";
-  statusMessage.textContent = "音频加载失败";
-  retryButton.hidden = false;
+  audioFailed = true;
+  updateMediaUi();
 });
 
-visualStage.querySelector("img").addEventListener("error", () => {
-  root.dataset.imageReady = "false";
+window.addEventListener("resize", () => {
+  artworkLayer = undefined;
+  backgroundLayer = undefined;
+  requestCanvasRender();
 });
-
 document.addEventListener("visibilitychange", () => {
-  isVisible = !document.hidden;
-  if (isVisible) startAnimation();
-  else cancelAnimationFrame(animationFrame);
+  if (document.hidden) cancelAnimationFrame(animationFrame);
+  else requestCanvasRender();
 });
 
-setTimeout(() => intro?.classList.add("is-finished"), 2500);
+buildLyricRule();
+updateMediaUi();
+void loadArtwork();
 
-updateMediaState();
-updateMuteState();
-startAnimation();
+window.addEventListener("beforeunload", () => {
+  disposed = true;
+  cancelAnimationFrame(animationFrame);
+});

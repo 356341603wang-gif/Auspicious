@@ -1,14 +1,44 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  artworkLayout,
   clamp,
   createLotusGeometry,
   formatTime,
+  outwardRingProgress,
   progressRatio,
   seekFromPointer,
   shouldShowLyrics,
   visualEnergy,
 } from "../player-core.js";
+
+test("artworkLayout matches the prayer reference crop on desktop and mobile", () => {
+  const desktop = artworkLayout(1280, 720, 3200, 4000);
+  const mobile = artworkLayout(390, 844, 3200, 4000);
+  const expectedDesktop = {
+    destinationHeight: 878.4,
+    destinationWidth: 702.72,
+    destinationX: 327.04,
+    destinationY: -57.6,
+  };
+  const expectedMobile = {
+    destinationHeight: 877.76,
+    destinationWidth: 702.208,
+    destinationX: -136.604,
+    destinationY: -12.66,
+  };
+
+  Object.keys(expectedDesktop).forEach((key) => {
+    assert.ok(Math.abs(desktop[key] - expectedDesktop[key]) < 1e-9);
+    assert.ok(Math.abs(mobile[key] - expectedMobile[key]) < 1e-9);
+  });
+});
+
+test("outwardRingProgress keeps twelve rings drifting at the reference speed", () => {
+  assert.equal(outwardRingProgress(0, 12, 10), 0.18);
+  assert.ok(Math.abs(outwardRingProgress(6, 12, 10) - 0.68) < 1e-9);
+  assert.equal(outwardRingProgress(0, 0, 10), 0);
+});
 
 test("formatTime produces stable minute and hour labels", () => {
   assert.equal(formatTime(0), "0:00");

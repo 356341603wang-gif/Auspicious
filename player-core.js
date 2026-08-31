@@ -2,6 +2,32 @@ export function clamp(value, min, max) {
   return Math.min(Math.max(Number(value) || 0, min), max);
 }
 
+export function artworkLayout(
+  width,
+  height,
+  naturalWidth,
+  naturalHeight,
+) {
+  const mobile = width < 700;
+  const destinationHeight = height * (mobile ? 1.04 : 1.22);
+  const destinationWidth = destinationHeight * (naturalWidth / naturalHeight);
+  const centerX = width * (mobile ? 0.55 : 0.53);
+
+  return {
+    destinationHeight,
+    destinationWidth,
+    destinationX: centerX - destinationWidth * 0.5,
+    destinationY: -height * (mobile ? 0.015 : 0.08),
+  };
+}
+
+export function outwardRingProgress(ringIndex, ringCount, time) {
+  if (ringCount <= 0) return 0;
+  return (
+    (Math.max(0, ringIndex) / ringCount + Math.max(0, time) * 0.018) % 1
+  );
+}
+
 export function formatTime(seconds) {
   if (!Number.isFinite(seconds)) return "0:00";
 
