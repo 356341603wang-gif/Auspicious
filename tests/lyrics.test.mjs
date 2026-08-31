@@ -31,10 +31,22 @@ test("the source video's three opening multiplier mantras precede the prayer", (
   );
   assert.equal(timeline.length, 3);
   assert.equal(lyricStateAtTime(1, timeline).phase, "opening");
-  assert.equal(lyricStateAtTime(5, timeline).lineIndex, 0);
-  assert.equal(lyricStateAtTime(6.7, timeline).lineIndex, 1);
-  assert.equal(lyricStateAtTime(10, timeline).groupIndex, 1);
-  assert.equal(lyricStateAtTime(18, timeline).groupIndex, 2);
+  assert.equal(lyricStateAtTime(3.8, timeline).lineIndex, 0);
+  assert.equal(lyricStateAtTime(4.1, timeline).lineIndex, 1);
+  assert.equal(lyricStateAtTime(7.6, timeline).groupIndex, 0);
+  assert.equal(lyricStateAtTime(7.8, timeline).groupIndex, 1);
+  assert.equal(lyricStateAtTime(17, timeline).groupIndex, 2);
+
+  for (let groupIndex = 0; groupIndex < timeline.length; groupIndex += 1) {
+    const cue = timeline[groupIndex];
+    assert.equal(cue.characterStarts.length, cue.lines.length);
+    for (let lineIndex = 0; lineIndex < cue.lines.length; lineIndex += 1) {
+      assert.equal(
+        cue.characterStarts[lineIndex].length,
+        Array.from(cue.lines[lineIndex]).length,
+      );
+    }
+  }
 });
 
 test("the Chinese lyrics match the ten groups shown in the source video", () => {
@@ -148,6 +160,28 @@ test("karaoke progress finishes at the sung line ending instead of stretching th
   assert.equal(lyricStateAtTime(16.5, timeline).lineProgress, 0.5);
 });
 
+test("karaoke progress follows measured character attacks instead of sweeping a line uniformly", () => {
+  const timeline = [
+    {
+      cycle: 1,
+      groupIndex: 0,
+      lines: ["第一二三"],
+      section: "prayer",
+      start: 10,
+      end: 14,
+      lineStarts: [10],
+      lineEnds: [14],
+      characterStarts: [[10, 11.5, 11.75, 13.5]],
+    },
+  ];
+
+  const state = lyricStateAtTime(11, timeline);
+
+  assert.equal(state.lineIndex, 0);
+  assert.ok(Math.abs(state.lineProgress - 1 / 6) < 0.001);
+  assert.notEqual(state.lineProgress, 0.25);
+});
+
 test("repeated lyric sections offset measured line endings with their starts", () => {
   const timeline = buildLyricTimeline(
     [["第一句", "第二句"]],
@@ -180,6 +214,22 @@ test("the measured three-cycle timeline follows the recorded vocal entrances", (
       [3, 9, 3],
     ],
   );
+});
+
+test("every sung Chinese character has an acoustic attack time in all three recitations", () => {
+  for (const cycle of LYRIC_CYCLE_TIMINGS) {
+    for (let groupIndex = 0; groupIndex < cycle.length; groupIndex += 1) {
+      const timing = cycle[groupIndex];
+      const lines = CHINESE_LYRIC_GROUPS[groupIndex];
+      assert.equal(timing.characterStarts.length, lines.length);
+      for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+        assert.equal(
+          timing.characterStarts[lineIndex].length,
+          Array.from(lines[lineIndex]).length,
+        );
+      }
+    }
+  }
 });
 
 test("the first recitation advances on the MP3 vocal entrances rather than the old visual cuts", () => {

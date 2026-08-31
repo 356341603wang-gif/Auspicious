@@ -89,6 +89,9 @@ export function buildLyricTimeline(
       end: timings[groupIndex].end + offset,
       lineStarts: timings[groupIndex].lineStarts?.map((start) => start + offset),
       lineEnds: timings[groupIndex].lineEnds?.map((end) => end + offset),
+      characterStarts: timings[groupIndex].characterStarts?.map((line) =>
+        line.map((start) => start + offset),
+      ),
     })),
   );
 }
@@ -106,6 +109,43 @@ export function buildMeasuredLyricTimeline(
       section,
       ...timings[groupIndex],
     })),
+  );
+}
+
+export function karaokeProgressAtTime(
+  currentTime,
+  lineStart,
+  lineEnd,
+  characterStarts,
+) {
+  const duration = Math.max(0.001, lineEnd - lineStart);
+  if (!Array.isArray(characterStarts) || characterStarts.length === 0) {
+    return clamp((currentTime - lineStart) / duration, 0, 1);
+  }
+
+  if (currentTime < characterStarts[0]) return 0;
+
+  let characterIndex = 0;
+  while (
+    characterIndex + 1 < characterStarts.length &&
+    characterStarts[characterIndex + 1] <= currentTime
+  ) {
+    characterIndex += 1;
+  }
+
+  const characterStart = characterStarts[characterIndex];
+  const characterEnd = characterStarts[characterIndex + 1] ?? lineEnd;
+  const characterProgress = clamp(
+    (currentTime - characterStart) /
+      Math.max(0.001, characterEnd - characterStart),
+    0,
+    1,
+  );
+
+  return clamp(
+    (characterIndex + characterProgress) / characterStarts.length,
+    0,
+    1,
   );
 }
 
@@ -153,10 +193,11 @@ export function lyricStateAtTime(currentTime, timeline) {
     const lineEnd = Number.isFinite(measuredLineEnd)
       ? measuredLineEnd
       : cue.lineStarts[lineIndex + 1] ?? cue.end;
-    lineProgress = clamp(
-      (safeTime - lineStart) / Math.max(0.001, lineEnd - lineStart),
-      0,
-      1,
+    lineProgress = karaokeProgressAtTime(
+      safeTime,
+      lineStart,
+      lineEnd,
+      cue.characterStarts?.[lineIndex],
     );
   } else {
     const linePosition = groupProgress * cue.lines.length;

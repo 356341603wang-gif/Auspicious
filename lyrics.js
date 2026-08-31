@@ -1,14 +1,43 @@
 // Chinese wording transcribed directly from the source video supplied by the user:
 // https://www.youtube.com/watch?v=basXlxiKoTA
+import { LYRIC_CYCLE_CHARACTER_STARTS } from "./lyric-character-timings.js";
+
 export const OPENING_MANTRA_GROUPS = Array.from({ length: 3 }, () => [
   "嗡 桑巴 Ra 桑巴 Ra 波玛纳萨 Ra",
   "玛哈臧巴巴吽啪德娑哈",
 ]);
 
 export const OPENING_MANTRA_TIMINGS = [
-  { start: 0, end: 9.98, lineStarts: [0, 6.56], lineEnds: [6.56, 9.98] },
-  { start: 9.98, end: 16.68, lineStarts: [9.98, 13.34], lineEnds: [13.34, 16.68] },
-  { start: 16.68, end: 26.18, lineStarts: [16.68, 21.48], lineEnds: [21.48, 26.18] },
+  {
+    start: 0.02,
+    end: 7.7,
+    lineStarts: [0.02, 3.99],
+    lineEnds: [3.99, 7.7],
+    characterStarts: [
+      [0.02, 0.11, 0.25, 0.59, 0.91, 1.2, 1.39, 1.49, 1.6, 1.7, 1.8, 1.91, 2.01, 2.12, 2.22, 2.47, 2.89, 3.24, 3.55, 3.7, 3.8],
+      [3.99, 4.1, 4.24, 4.56, 4.81, 4.94, 5.22, 5.6, 5.97, 6.34],
+    ],
+  },
+  {
+    start: 7.72,
+    end: 16.78,
+    lineStarts: [7.72, 11.91],
+    lineEnds: [11.91, 16.78],
+    characterStarts: [
+      [7.72, 7.82, 7.96, 8.16, 8.4, 8.66, 9.01, 9.28, 9.39, 9.51, 9.62, 9.73, 9.85, 9.96, 10.08, 10.19, 10.65, 11.07, 11.41, 11.61, 11.72],
+      [11.91, 12.02, 12.16, 12.49, 12.75, 12.93, 13.31, 13.84, 14.36, 14.88],
+    ],
+  },
+  {
+    start: 16.8,
+    end: 26.28,
+    lineStarts: [16.8, 22.06],
+    lineEnds: [22.06, 26.28],
+    characterStarts: [
+      [16.8, 16.93, 17.08, 17.25, 17.58, 17.98, 18.41, 18.75, 18.89, 19.04, 19.18, 19.32, 19.47, 19.61, 19.77, 19.94, 20.49, 21, 21.44, 21.68, 21.82],
+      [22.06, 22.19, 22.38, 22.78, 23.07, 23.21, 23.5, 23.9, 24.3, 24.7],
+    ],
+  },
 ];
 
 export const CHINESE_LYRIC_GROUPS = [
@@ -153,21 +182,30 @@ const LYRIC_CYCLE_LINE_TIMINGS = [
   },
 ];
 
-function groupLineTimings({ starts, ends, cycleEnd }) {
+function groupLineTimings(
+  { starts, ends, cycleEnd },
+  characterStarts,
+) {
   let offset = 0;
   return CHINESE_LYRIC_GROUPS.map((lines) => {
     const lineStarts = starts.slice(offset, offset + lines.length);
     const lineEnds = ends.slice(offset, offset + lines.length);
+    const lineCharacterStarts = characterStarts.slice(
+      offset,
+      offset + lines.length,
+    );
     offset += lines.length;
     return {
       start: lineStarts[0],
       end: starts[offset] ?? cycleEnd,
       lineStarts,
       lineEnds,
+      characterStarts: lineCharacterStarts,
     };
   });
 }
 
 export const LYRIC_CYCLE_TIMINGS = LYRIC_CYCLE_LINE_TIMINGS.map(
-  groupLineTimings,
+  (cycle, cycleIndex) =>
+    groupLineTimings(cycle, LYRIC_CYCLE_CHARACTER_STARTS[cycleIndex]),
 );
