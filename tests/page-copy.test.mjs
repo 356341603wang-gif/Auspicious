@@ -16,3 +16,14 @@ test("the experience omits nonessential explanatory copy", async () => {
   unwantedCopy.forEach((copy) => assert.equal(source.includes(copy), false));
   assert.match(html, /aria-label="播放音频"/);
 });
+
+test("the opening uses the restrained horizontal artwork reveal", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+
+  assert.match(html, /class="intro-reveal"/);
+  assert.match(html, /class="intro-artwork"/);
+  assert.doesNotMatch(html, /intro-(?:dust|mandala|rays|seed|aura)/);
+  assert.match(css, /clip-path:\s*inset\(48% 0 48% 0 round 180px\)/);
+  assert.match(css, /@keyframes intro-artwork-reveal/);
+});
