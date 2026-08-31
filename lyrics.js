@@ -1,44 +1,16 @@
-// Chinese wording transcribed directly from the source video supplied by the user:
+// Chinese wording transcribed from the source video supplied by the user:
 // https://www.youtube.com/watch?v=basXlxiKoTA
-import { LYRIC_CYCLE_CHARACTER_STARTS } from "./lyric-character-timings.js";
+import {
+  FORCED_LYRIC_CYCLE_LINES,
+  FORCED_OPENING_TIMINGS,
+} from "./lyric-forced-timings.js?v=12";
 
 export const OPENING_MANTRA_GROUPS = Array.from({ length: 3 }, () => [
   "嗡 桑巴 Ra 桑巴 Ra 波玛纳萨 Ra",
   "玛哈臧巴巴吽啪德娑哈",
 ]);
 
-export const OPENING_MANTRA_TIMINGS = [
-  {
-    start: 0.02,
-    end: 7.7,
-    lineStarts: [0.02, 3.99],
-    lineEnds: [3.99, 7.7],
-    characterStarts: [
-      [0.02, 0.11, 0.25, 0.59, 0.91, 1.2, 1.39, 1.49, 1.6, 1.7, 1.8, 1.91, 2.01, 2.12, 2.22, 2.47, 2.89, 3.24, 3.55, 3.7, 3.8],
-      [3.99, 4.1, 4.24, 4.56, 4.81, 4.94, 5.22, 5.6, 5.97, 6.34],
-    ],
-  },
-  {
-    start: 7.72,
-    end: 16.78,
-    lineStarts: [7.72, 11.91],
-    lineEnds: [11.91, 16.78],
-    characterStarts: [
-      [7.72, 7.82, 7.96, 8.16, 8.4, 8.66, 9.01, 9.28, 9.39, 9.51, 9.62, 9.73, 9.85, 9.96, 10.08, 10.19, 10.65, 11.07, 11.41, 11.61, 11.72],
-      [11.91, 12.02, 12.16, 12.49, 12.75, 12.93, 13.31, 13.84, 14.36, 14.88],
-    ],
-  },
-  {
-    start: 16.8,
-    end: 26.28,
-    lineStarts: [16.8, 22.06],
-    lineEnds: [22.06, 26.28],
-    characterStarts: [
-      [16.8, 16.93, 17.08, 17.25, 17.58, 17.98, 18.41, 18.75, 18.89, 19.04, 19.18, 19.32, 19.47, 19.61, 19.77, 19.94, 20.49, 21, 21.44, 21.68, 21.82],
-      [22.06, 22.19, 22.38, 22.78, 23.07, 23.21, 23.5, 23.9, 24.3, 24.7],
-    ],
-  },
-];
+export const OPENING_MANTRA_TIMINGS = FORCED_OPENING_TIMINGS;
 
 export const CHINESE_LYRIC_GROUPS = [
   [
@@ -104,8 +76,7 @@ export const CHINESE_LYRIC_GROUPS = [
   ],
 ];
 
-// The first recitation's ten on-screen lyric changes, measured against the
-// 7:18 source video. Later recitations reuse the same measured cadence.
+// Kept for the generic timeline helpers and compatibility checks.
 export const LYRIC_GROUP_TIMINGS = [
   { start: 25.5, end: 41.0 },
   { start: 41.0, end: 54.5 },
@@ -121,91 +92,22 @@ export const LYRIC_GROUP_TIMINGS = [
 
 export const LYRIC_CYCLE_OFFSETS = [0, 137.88, 275.24];
 
-// Vocal entrances and endings measured from the supplied MP3 itself. Keeping
-// starts and endings separate prevents the karaoke fill from stretching over
-// the singer's breaths between lines.
-const LYRIC_CYCLE_LINE_TIMINGS = [
-  {
-    starts: [
-      25.82, 26.2, 30.44, 33.6, 37.18, 40.62, 43.9, 47.62, 51.04,
-      55.06, 57.88, 61.38, 65.16, 68.22, 71.54, 74.22, 78.36, 81.52,
-      84.72, 87.43, 91.46, 94.82, 98.18, 101.32, 104.98, 108.12,
-      111.56, 114.78, 117.92, 121.4, 124.58, 127.53, 131.18, 134.5,
-      137.78, 140.84, 144.18, 147.36, 150.78, 153.92, 157.18,
-    ],
-    ends: [
-      26.18, 30.44, 33.58, 37.18, 40.62, 43.45, 47.58, 50.51, 54.46,
-      57.86, 61.22, 64.66, 68.22, 71.52, 74.22, 78.36, 81.52, 84.63,
-      87.43, 91.46, 94.82, 98.16, 101.25, 104.96, 108.05, 111.56,
-      114.76, 117.85, 121.4, 124.56, 127.53, 131.16, 134.44, 137.76,
-      140.84, 144.12, 147.36, 150.76, 153.85, 157.11, 164.16,
-    ],
-    cycleEnd: 164.16,
-  },
-  {
-    starts: [
-      164.16, 164.18, 167.96, 171.58, 175.16, 178.58, 181.96, 185.38,
-      188.96, 192.38, 195.76, 199.18, 202.56, 205.98, 209.36, 212.58,
-      215.96, 219.18, 222.56, 225.67, 229.16, 232.47, 236.16, 239.68,
-      242.98, 245.8, 249.13, 252.95, 255.58, 258.81, 262.18, 265.04,
-      268.58, 272.17, 275.18, 278.56, 281.58, 284.81, 288.18, 291.56,
-      294.58,
-    ],
-    ends: [
-      164.18, 167.96, 171.56, 175.16, 178.56, 181.96, 185.36, 188.96,
-      192.36, 195.76, 199.16, 202.56, 205.96, 209.36, 212.56, 215.96,
-      219.16, 222.56, 225.67, 229.16, 232.47, 236.16, 239.68, 242.98,
-      245.79, 249.13, 252.95, 255.56, 258.81, 262.16, 265.04, 268.51,
-      272.17, 275.16, 278.56, 281.51, 284.81, 288.16, 291.56, 294.51,
-      300.56,
-    ],
-    cycleEnd: 300.56,
-  },
-  {
-    starts: [
-      300.56, 300.58, 304.56, 308.58, 312.56, 315.58, 319.56, 322.58,
-      326.56, 329.58, 332.56, 336.36, 339.58, 342.56, 346.58, 349.56,
-      353.58, 356.14, 359.58, 362.57, 366.46, 369.56, 373.45, 376.58,
-      380.04, 383.09, 386.3, 389.58, 393.56, 396.25, 399.58, 402.56,
-      405.58, 408.43, 412.58, 415.56, 418.58, 422.56, 425.58, 428.56,
-      431.58,
-    ],
-    ends: [
-      300.58, 304.56, 308.56, 312.56, 315.56, 319.56, 322.56, 326.56,
-      329.56, 332.56, 336.29, 339.56, 342.56, 346.56, 349.56, 353.56,
-      356.14, 359.56, 362.57, 366.46, 369.56, 373.45, 376.56, 380.04,
-      383.06, 386.3, 389.56, 393.56, 396.25, 399.56, 402.56, 405.56,
-      408.43, 412.56, 415.56, 418.56, 422.56, 425.56, 428.56, 431.56,
-      437.56,
-    ],
-    cycleEnd: 438.079,
-  },
-];
-
-function groupLineTimings(
-  { starts, ends, cycleEnd },
-  characterStarts,
-) {
+function groupForcedLineTimings(cycleLines) {
   let offset = 0;
+
   return CHINESE_LYRIC_GROUPS.map((lines) => {
-    const lineStarts = starts.slice(offset, offset + lines.length);
-    const lineEnds = ends.slice(offset, offset + lines.length);
-    const lineCharacterStarts = characterStarts.slice(
-      offset,
-      offset + lines.length,
-    );
+    const lineTimings = cycleLines.slice(offset, offset + lines.length);
     offset += lines.length;
+
     return {
-      start: lineStarts[0],
-      end: starts[offset] ?? cycleEnd,
-      lineStarts,
-      lineEnds,
-      characterStarts: lineCharacterStarts,
+      start: lineTimings[0].start,
+      end: cycleLines[offset]?.start ?? lineTimings.at(-1).end,
+      lineStarts: lineTimings.map((timing) => timing.start),
+      lineEnds: lineTimings.map((timing) => timing.end),
+      characterStarts: lineTimings.map((timing) => timing.characterStarts),
     };
   });
 }
 
-export const LYRIC_CYCLE_TIMINGS = LYRIC_CYCLE_LINE_TIMINGS.map(
-  (cycle, cycleIndex) =>
-    groupLineTimings(cycle, LYRIC_CYCLE_CHARACTER_STARTS[cycleIndex]),
-);
+export const LYRIC_CYCLE_TIMINGS =
+  FORCED_LYRIC_CYCLE_LINES.map(groupForcedLineTimings);

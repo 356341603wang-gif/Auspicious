@@ -32,9 +32,10 @@ test("the source video's three opening multiplier mantras precede the prayer", (
   assert.equal(timeline.length, 3);
   assert.equal(lyricStateAtTime(1, timeline).phase, "opening");
   assert.equal(lyricStateAtTime(3.8, timeline).lineIndex, 0);
-  assert.equal(lyricStateAtTime(4.1, timeline).lineIndex, 1);
-  assert.equal(lyricStateAtTime(7.6, timeline).groupIndex, 0);
-  assert.equal(lyricStateAtTime(7.8, timeline).groupIndex, 1);
+  assert.equal(lyricStateAtTime(4.1, timeline).lineIndex, 0);
+  assert.equal(lyricStateAtTime(7.0, timeline).lineIndex, 1);
+  assert.equal(lyricStateAtTime(9.6, timeline).groupIndex, 0);
+  assert.equal(lyricStateAtTime(9.8, timeline).groupIndex, 1);
   assert.equal(lyricStateAtTime(17, timeline).groupIndex, 2);
 
   for (let groupIndex = 0; groupIndex < timeline.length; groupIndex += 1) {
@@ -203,8 +204,8 @@ test("the measured three-cycle timeline follows the recorded vocal entrances", (
   assert.deepEqual(
     [
       lyricStateAtTime(30.5, timeline),
-      lyricStateAtTime(168.1, timeline),
-      lyricStateAtTime(305.4, timeline),
+      lyricStateAtTime(168.3, timeline),
+      lyricStateAtTime(305.7, timeline),
       lyricStateAtTime(433, timeline),
     ].map(({ cycle, groupIndex, lineIndex }) => [cycle, groupIndex, lineIndex]),
     [
@@ -232,14 +233,29 @@ test("every sung Chinese character has an acoustic attack time in all three reci
   }
 });
 
+test("the visible highlight follows the forced-aligned syllables in 文殊童子具德金刚手", () => {
+  const timeline = buildMeasuredLyricTimeline(
+    CHINESE_LYRIC_GROUPS,
+    LYRIC_CYCLE_TIMINGS,
+  );
+
+  const duringFourthSyllable = lyricStateAtTime(69.4, timeline);
+
+  assert.equal(duringFourthSyllable.cycle, 1);
+  assert.equal(duringFourthSyllable.groupIndex, 3);
+  assert.equal(duringFourthSyllable.lineIndex, 0);
+  assert.ok(duringFourthSyllable.lineProgress > 0.36);
+  assert.ok(duringFourthSyllable.lineProgress < 0.41);
+});
+
 test("the first recitation advances on the MP3 vocal entrances rather than the old visual cuts", () => {
   const timeline = buildMeasuredLyricTimeline(
     CHINESE_LYRIC_GROUPS,
     LYRIC_CYCLE_TIMINGS,
   );
 
-  const beforeSecondBuddha = lyricStateAtTime(43.7, timeline);
-  const secondBuddha = lyricStateAtTime(43.95, timeline);
+  const beforeSecondBuddha = lyricStateAtTime(44.3, timeline);
+  const secondBuddha = lyricStateAtTime(44.5, timeline);
 
   assert.deepEqual(
     [beforeSecondBuddha.groupIndex, beforeSecondBuddha.lineIndex],
