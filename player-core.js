@@ -61,6 +61,23 @@ export function buildLyricTimeline(
       section,
       start: timings[groupIndex].start + offset,
       end: timings[groupIndex].end + offset,
+      lineStarts: timings[groupIndex].lineStarts?.map((start) => start + offset),
+    })),
+  );
+}
+
+export function buildMeasuredLyricTimeline(
+  groups,
+  cycleTimings,
+  section = "prayer",
+) {
+  return cycleTimings.flatMap((timings, cycleIndex) =>
+    groups.map((lines, groupIndex) => ({
+      cycle: cycleIndex + 1,
+      groupIndex,
+      lines,
+      section,
+      ...timings[groupIndex],
     })),
   );
 }
@@ -91,11 +108,34 @@ export function lyricStateAtTime(currentTime, timeline) {
   const cue = timeline[cueIndex];
   const duration = Math.max(0.001, cue.end - cue.start);
   const groupProgress = clamp((safeTime - cue.start) / duration, 0, 1);
-  const linePosition = groupProgress * cue.lines.length;
-  const lineIndex = Math.min(
-    cue.lines.length - 1,
-    Math.max(0, Math.floor(linePosition)),
-  );
+  const hasMeasuredLines =
+    Array.isArray(cue.lineStarts) && cue.lineStarts.length === cue.lines.length;
+  let lineIndex;
+  let lineProgress;
+
+  if (hasMeasuredLines) {
+    lineIndex = 0;
+    while (
+      lineIndex + 1 < cue.lineStarts.length &&
+      cue.lineStarts[lineIndex + 1] <= safeTime
+    ) {
+      lineIndex += 1;
+    }
+    const lineStart = cue.lineStarts[lineIndex];
+    const lineEnd = cue.lineStarts[lineIndex + 1] ?? cue.end;
+    lineProgress = clamp(
+      (safeTime - lineStart) / Math.max(0.001, lineEnd - lineStart),
+      0,
+      1,
+    );
+  } else {
+    const linePosition = groupProgress * cue.lines.length;
+    lineIndex = Math.min(
+      cue.lines.length - 1,
+      Math.max(0, Math.floor(linePosition)),
+    );
+    lineProgress = clamp(linePosition - lineIndex, 0, 1);
+  }
   const active = safeTime <= cue.end;
   const hasNext = cueIndex + 1 < timeline.length;
 
@@ -104,7 +144,7 @@ export function lyricStateAtTime(currentTime, timeline) {
     cycle: cue.cycle,
     groupIndex: cue.groupIndex,
     lineIndex,
-    lineProgress: active ? clamp(linePosition - lineIndex, 0, 1) : 1,
+    lineProgress: active ? lineProgress : 1,
     phase: active ? cue.section : hasNext ? "interlude" : "outro",
   };
 }

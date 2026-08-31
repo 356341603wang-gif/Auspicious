@@ -1,5 +1,6 @@
 import {
   buildLyricTimeline,
+  buildMeasuredLyricTimeline,
   createLotusGeometry,
   formatTime,
   lyricStateAtTime,
@@ -7,14 +8,13 @@ import {
   seekFromPointer,
   shouldShowLyrics,
   visualEnergy,
-} from "./player-core.js?v=3";
+} from "./player-core.js?v=4";
 import {
   CHINESE_LYRIC_GROUPS,
-  LYRIC_CYCLE_OFFSETS,
-  LYRIC_GROUP_TIMINGS,
+  LYRIC_CYCLE_TIMINGS,
   OPENING_MANTRA_GROUPS,
   OPENING_MANTRA_TIMINGS,
-} from "./lyrics.js?v=3";
+} from "./lyrics.js?v=4";
 
 const FALLBACK_DURATION = 438.079;
 const root = document.documentElement;
@@ -41,10 +41,9 @@ const lyricTimeline = [
     [0],
     "opening",
   ),
-  ...buildLyricTimeline(
+  ...buildMeasuredLyricTimeline(
     CHINESE_LYRIC_GROUPS,
-    LYRIC_GROUP_TIMINGS,
-    LYRIC_CYCLE_OFFSETS,
+    LYRIC_CYCLE_TIMINGS,
   ),
 ];
 

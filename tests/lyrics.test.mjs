@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   buildLyricTimeline,
+  buildMeasuredLyricTimeline,
   lyricStateAtTime,
 } from "../player-core.js";
 import {
   CHINESE_LYRIC_GROUPS,
+  LYRIC_CYCLE_TIMINGS,
   LYRIC_CYCLE_OFFSETS,
   LYRIC_GROUP_TIMINGS,
   OPENING_MANTRA_GROUPS,
@@ -29,6 +31,8 @@ test("the source video's three opening multiplier mantras precede the prayer", (
   );
   assert.equal(timeline.length, 3);
   assert.equal(lyricStateAtTime(1, timeline).phase, "opening");
+  assert.equal(lyricStateAtTime(5, timeline).lineIndex, 0);
+  assert.equal(lyricStateAtTime(6.2, timeline).lineIndex, 1);
   assert.equal(lyricStateAtTime(9, timeline).groupIndex, 1);
   assert.equal(lyricStateAtTime(18, timeline).groupIndex, 2);
 });
@@ -103,4 +107,46 @@ test("lyric state follows seeking, line progress, rests, and the three cycles", 
 
   assert.equal(lyricStateAtTime(160, timeline).phase, "interlude");
   assert.equal(lyricStateAtTime(437, timeline).phase, "outro");
+});
+
+test("lyric state follows measured line starts instead of equal slices", () => {
+  const timeline = [
+    {
+      cycle: 1,
+      groupIndex: 0,
+      lines: ["第一句", "第二句", "第三句"],
+      section: "prayer",
+      start: 10,
+      end: 20,
+      lineStarts: [10, 11.5, 17],
+    },
+  ];
+
+  assert.equal(lyricStateAtTime(11.4, timeline).lineIndex, 0);
+  assert.equal(lyricStateAtTime(11.6, timeline).lineIndex, 1);
+  assert.equal(lyricStateAtTime(17.2, timeline).lineIndex, 2);
+  assert.ok(lyricStateAtTime(11.6, timeline).lineProgress < 0.1);
+});
+
+test("the measured three-cycle timeline follows the recorded vocal entrances", () => {
+  const timeline = buildMeasuredLyricTimeline(
+    CHINESE_LYRIC_GROUPS,
+    LYRIC_CYCLE_TIMINGS,
+  );
+
+  assert.equal(timeline.length, 30);
+  assert.deepEqual(
+    [
+      lyricStateAtTime(30.3, timeline),
+      lyricStateAtTime(168.1, timeline),
+      lyricStateAtTime(305.4, timeline),
+      lyricStateAtTime(433, timeline),
+    ].map(({ cycle, groupIndex, lineIndex }) => [cycle, groupIndex, lineIndex]),
+    [
+      [1, 0, 2],
+      [2, 0, 2],
+      [3, 0, 2],
+      [3, 9, 3],
+    ],
+  );
 });
