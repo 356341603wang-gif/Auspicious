@@ -5,15 +5,16 @@ import {
   lyricStateAtTime,
   progressRatio,
   seekFromPointer,
+  shouldShowLyrics,
   visualEnergy,
-} from "./player-core.js";
+} from "./player-core.js?v=3";
 import {
   CHINESE_LYRIC_GROUPS,
   LYRIC_CYCLE_OFFSETS,
   LYRIC_GROUP_TIMINGS,
   OPENING_MANTRA_GROUPS,
   OPENING_MANTRA_TIMINGS,
-} from "./lyrics.js";
+} from "./lyrics.js?v=3";
 
 const FALLBACK_DURATION = 438.079;
 const root = document.documentElement;
@@ -105,7 +106,11 @@ function updateLyricState() {
   const state = lyricStateAtTime(audio.currentTime, lyricTimeline);
   renderLyricGroup(state);
 
-  const showLyrics = audio.currentTime > 0.05 || !audio.paused;
+  const showLyrics = shouldShowLyrics(
+    audio.currentTime,
+    audio.paused,
+    state.phase,
+  );
   root.dataset.lyricsVisible = String(showLyrics);
   root.dataset.lyricsPhase = state.phase;
 

@@ -22,6 +22,10 @@ export function progressRatio(currentTime, duration) {
   return clamp(currentTime / duration, 0, 1);
 }
 
+export function shouldShowLyrics(currentTime, paused, phase) {
+  return phase === "opening" || currentTime > 0.05 || !paused;
+}
+
 export function seekFromPointer(clientX, left, width, duration) {
   if (!Number.isFinite(width) || width <= 0) return 0;
   return clamp((clientX - left) / width, 0, 1) * Math.max(0, duration);

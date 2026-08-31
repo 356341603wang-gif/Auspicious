@@ -6,6 +6,7 @@ import {
   formatTime,
   progressRatio,
   seekFromPointer,
+  shouldShowLyrics,
   visualEnergy,
 } from "../player-core.js";
 
@@ -28,6 +29,13 @@ test("progressRatio remains bounded while metadata is loading", () => {
   assert.equal(progressRatio(5, 0), 0);
   assert.equal(progressRatio(900, 480), 1);
   assert.equal(clamp(-2, 0, 1), 0);
+});
+
+test("the opening multiplier mantra is visible before playback begins", () => {
+  assert.equal(shouldShowLyrics(0, true, "opening"), true);
+  assert.equal(shouldShowLyrics(0, true, "prelude"), false);
+  assert.equal(shouldShowLyrics(12, true, "opening"), true);
+  assert.equal(shouldShowLyrics(30, false, "prayer"), true);
 });
 
 test("createLotusGeometry returns eight evenly spaced directions", () => {
