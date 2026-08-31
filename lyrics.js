@@ -6,9 +6,9 @@ export const OPENING_MANTRA_GROUPS = Array.from({ length: 3 }, () => [
 ]);
 
 export const OPENING_MANTRA_TIMINGS = [
-  { start: 0, end: 8.5, lineStarts: [0, 6.15] },
-  { start: 8.5, end: 17, lineStarts: [8.5, 14.65] },
-  { start: 17, end: 26.36, lineStarts: [17, 23.15] },
+  { start: 0, end: 9.98, lineStarts: [0, 6.56], lineEnds: [6.56, 9.98] },
+  { start: 9.98, end: 16.68, lineStarts: [9.98, 13.34], lineEnds: [13.34, 16.68] },
+  { start: 16.68, end: 26.18, lineStarts: [16.68, 21.48], lineEnds: [21.48, 26.18] },
 ];
 
 export const CHINESE_LYRIC_GROUPS = [
@@ -92,44 +92,82 @@ export const LYRIC_GROUP_TIMINGS = [
 
 export const LYRIC_CYCLE_OFFSETS = [0, 137.88, 275.24];
 
-// Measured against the supplied 7:18 recording. Each group carries the
-// actual vocal entrance of every displayed line; the three recitations are
-// timed independently so small performance differences do not accumulate.
-export const LYRIC_CYCLE_TIMINGS = [
-  [
-    { start: 26, end: 40.92, lineStarts: [26, 26.36, 30.24, 33.84, 37.4] },
-    { start: 40.92, end: 54.68, lineStarts: [40.92, 44.4, 47.8, 51.28] },
-    { start: 54.68, end: 67.76, lineStarts: [54.68, 58.12, 61.52, 64.92] },
-    { start: 67.76, end: 81.56, lineStarts: [67.76, 71.64, 74.96, 78.32] },
-    { start: 81.56, end: 94.4, lineStarts: [81.56, 84.88, 88.24, 91.56] },
-    { start: 94.4, end: 108.34, lineStarts: [94.4, 98.28, 101.64, 105.02] },
-    { start: 108.34, end: 120.72, lineStarts: [108.34, 111.62, 114.84, 118.22] },
-    { start: 120.72, end: 134.22, lineStarts: [120.72, 124.74, 128.02, 131.34] },
-    { start: 134.22, end: 147.58, lineStarts: [134.22, 137.86, 141.12, 144.34] },
-    { start: 147.58, end: 163.34, lineStarts: [147.58, 150.86, 154.06, 157.38] },
-  ],
-  [
-    { start: 163.34, end: 178.78, lineStarts: [163.34, 163.7, 167.96, 171.66, 175.22] },
-    { start: 178.78, end: 192.52, lineStarts: [178.78, 182.22, 185.68, 189.12] },
-    { start: 192.52, end: 206.16, lineStarts: [192.52, 195.96, 198.84, 202.82] },
-    { start: 206.16, end: 219.46, lineStarts: [206.16, 209.5, 212.84, 216.2] },
-    { start: 219.46, end: 232.84, lineStarts: [219.46, 222.76, 226.16, 229.48] },
-    { start: 232.84, end: 246.02, lineStarts: [232.84, 236.16, 239.52, 242.84] },
-    { start: 246.02, end: 258.84, lineStarts: [246.02, 249.48, 252.72, 256] },
-    { start: 258.84, end: 271.96, lineStarts: [258.84, 262.48, 265.8, 269.12] },
-    { start: 271.96, end: 285.4, lineStarts: [271.96, 275.68, 278.8, 282.2] },
-    { start: 285.4, end: 300, lineStarts: [285.4, 288.7, 292, 295.3] },
-  ],
-  [
-    { start: 300, end: 316.08, lineStarts: [300, 300.36, 305.32, 308.92, 312.44] },
-    { start: 316.08, end: 329.88, lineStarts: [316.08, 319.56, 323, 326.48] },
-    { start: 329.88, end: 343.36, lineStarts: [329.88, 333.32, 336.2, 340.12] },
-    { start: 343.36, end: 356.56, lineStarts: [343.36, 346.72, 350, 353.36] },
-    { start: 356.56, end: 369.92, lineStarts: [356.56, 359.92, 363.28, 366.56] },
-    { start: 369.92, end: 382.88, lineStarts: [369.92, 373.28, 376.64, 379.52] },
-    { start: 382.88, end: 396, lineStarts: [382.88, 386.16, 389.3, 393] },
-    { start: 396, end: 408.32, lineStarts: [396, 399.5, 403, 406] },
-    { start: 408.32, end: 422.76, lineStarts: [408.32, 412, 415, 419] },
-    { start: 422.76, end: 438.079, lineStarts: [422.76, 426.08, 429.28, 432.56] },
-  ],
+// Vocal entrances and endings measured from the supplied MP3 itself. Keeping
+// starts and endings separate prevents the karaoke fill from stretching over
+// the singer's breaths between lines.
+const LYRIC_CYCLE_LINE_TIMINGS = [
+  {
+    starts: [
+      25.82, 26.2, 30.44, 33.6, 37.18, 40.62, 43.9, 47.62, 51.04,
+      55.06, 57.88, 61.38, 65.16, 68.22, 71.54, 74.22, 78.36, 81.52,
+      84.72, 87.43, 91.46, 94.82, 98.18, 101.32, 104.98, 108.12,
+      111.56, 114.78, 117.92, 121.4, 124.58, 127.53, 131.18, 134.5,
+      137.78, 140.84, 144.18, 147.36, 150.78, 153.92, 157.18,
+    ],
+    ends: [
+      26.18, 30.44, 33.58, 37.18, 40.62, 43.45, 47.58, 50.51, 54.46,
+      57.86, 61.22, 64.66, 68.22, 71.52, 74.22, 78.36, 81.52, 84.63,
+      87.43, 91.46, 94.82, 98.16, 101.25, 104.96, 108.05, 111.56,
+      114.76, 117.85, 121.4, 124.56, 127.53, 131.16, 134.44, 137.76,
+      140.84, 144.12, 147.36, 150.76, 153.85, 157.11, 164.16,
+    ],
+    cycleEnd: 164.16,
+  },
+  {
+    starts: [
+      164.16, 164.18, 167.96, 171.58, 175.16, 178.58, 181.96, 185.38,
+      188.96, 192.38, 195.76, 199.18, 202.56, 205.98, 209.36, 212.58,
+      215.96, 219.18, 222.56, 225.67, 229.16, 232.47, 236.16, 239.68,
+      242.98, 245.8, 249.13, 252.95, 255.58, 258.81, 262.18, 265.04,
+      268.58, 272.17, 275.18, 278.56, 281.58, 284.81, 288.18, 291.56,
+      294.58,
+    ],
+    ends: [
+      164.18, 167.96, 171.56, 175.16, 178.56, 181.96, 185.36, 188.96,
+      192.36, 195.76, 199.16, 202.56, 205.96, 209.36, 212.56, 215.96,
+      219.16, 222.56, 225.67, 229.16, 232.47, 236.16, 239.68, 242.98,
+      245.79, 249.13, 252.95, 255.56, 258.81, 262.16, 265.04, 268.51,
+      272.17, 275.16, 278.56, 281.51, 284.81, 288.16, 291.56, 294.51,
+      300.56,
+    ],
+    cycleEnd: 300.56,
+  },
+  {
+    starts: [
+      300.56, 300.58, 304.56, 308.58, 312.56, 315.58, 319.56, 322.58,
+      326.56, 329.58, 332.56, 336.36, 339.58, 342.56, 346.58, 349.56,
+      353.58, 356.14, 359.58, 362.57, 366.46, 369.56, 373.45, 376.58,
+      380.04, 383.09, 386.3, 389.58, 393.56, 396.25, 399.58, 402.56,
+      405.58, 408.43, 412.58, 415.56, 418.58, 422.56, 425.58, 428.56,
+      431.58,
+    ],
+    ends: [
+      300.58, 304.56, 308.56, 312.56, 315.56, 319.56, 322.56, 326.56,
+      329.56, 332.56, 336.29, 339.56, 342.56, 346.56, 349.56, 353.56,
+      356.14, 359.56, 362.57, 366.46, 369.56, 373.45, 376.56, 380.04,
+      383.06, 386.3, 389.56, 393.56, 396.25, 399.56, 402.56, 405.56,
+      408.43, 412.56, 415.56, 418.56, 422.56, 425.56, 428.56, 431.56,
+      437.56,
+    ],
+    cycleEnd: 438.079,
+  },
 ];
+
+function groupLineTimings({ starts, ends, cycleEnd }) {
+  let offset = 0;
+  return CHINESE_LYRIC_GROUPS.map((lines) => {
+    const lineStarts = starts.slice(offset, offset + lines.length);
+    const lineEnds = ends.slice(offset, offset + lines.length);
+    offset += lines.length;
+    return {
+      start: lineStarts[0],
+      end: starts[offset] ?? cycleEnd,
+      lineStarts,
+      lineEnds,
+    };
+  });
+}
+
+export const LYRIC_CYCLE_TIMINGS = LYRIC_CYCLE_LINE_TIMINGS.map(
+  groupLineTimings,
+);

@@ -62,6 +62,7 @@ export function buildLyricTimeline(
       start: timings[groupIndex].start + offset,
       end: timings[groupIndex].end + offset,
       lineStarts: timings[groupIndex].lineStarts?.map((start) => start + offset),
+      lineEnds: timings[groupIndex].lineEnds?.map((end) => end + offset),
     })),
   );
 }
@@ -122,7 +123,10 @@ export function lyricStateAtTime(currentTime, timeline) {
       lineIndex += 1;
     }
     const lineStart = cue.lineStarts[lineIndex];
-    const lineEnd = cue.lineStarts[lineIndex + 1] ?? cue.end;
+    const measuredLineEnd = cue.lineEnds?.[lineIndex];
+    const lineEnd = Number.isFinite(measuredLineEnd)
+      ? measuredLineEnd
+      : cue.lineStarts[lineIndex + 1] ?? cue.end;
     lineProgress = clamp(
       (safeTime - lineStart) / Math.max(0.001, lineEnd - lineStart),
       0,

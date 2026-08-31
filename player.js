@@ -8,13 +8,13 @@ import {
   seekFromPointer,
   shouldShowLyrics,
   visualEnergy,
-} from "./player-core.js?v=4";
+} from "./player-core.js?v=7";
 import {
   CHINESE_LYRIC_GROUPS,
   LYRIC_CYCLE_TIMINGS,
   OPENING_MANTRA_GROUPS,
   OPENING_MANTRA_TIMINGS,
-} from "./lyrics.js?v=4";
+} from "./lyrics.js?v=7";
 
 const FALLBACK_DURATION = 438.079;
 const root = document.documentElement;
@@ -400,6 +400,8 @@ progress.addEventListener("pointerup", (event) => {
 progress.addEventListener("pointercancel", () => {
   isSeeking = false;
 });
+
+progress.addEventListener("click", seekToPointer);
 
 retryButton.addEventListener("click", async () => {
   retryButton.hidden = true;

@@ -21,16 +21,26 @@
       fetchpriority="high"
     />
     <link rel="preload" as="font" href="./noto-serif-tibetan-variable.ttf" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=5" />
-    <script type="module" src="./player.js?v=4"></script>
+    <link rel="stylesheet" href="./styles.css?v=8" />
+    <script type="module" src="./player.js?v=8"></script>
   </head>
   <body>
     <div id="intro" class="intro" aria-hidden="true">
+      <div class="intro-aura"></div>
+      <div class="intro-mandala">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
       <div class="intro-rays">
         <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
       </div>
+      <div class="intro-statue">
+        <img src="./manjushri-statue.jpg" alt="" width="3200" height="4000" />
+      </div>
+      <div class="intro-dust">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
       <div class="intro-seed" lang="bo">དྷཱིཿ</div>
-      <p>八圣吉祥颂</p>
     </div>
 
     <main class="experience" aria-labelledby="trackTitle">
@@ -115,6 +125,9 @@
         </button>
 
         <div class="timeline-wrap">
+          <div class="timeline-markers" aria-hidden="true">
+            <i></i><i></i>
+          </div>
           <input
             id="progress"
             type="range"

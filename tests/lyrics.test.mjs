@@ -32,8 +32,8 @@ test("the source video's three opening multiplier mantras precede the prayer", (
   assert.equal(timeline.length, 3);
   assert.equal(lyricStateAtTime(1, timeline).phase, "opening");
   assert.equal(lyricStateAtTime(5, timeline).lineIndex, 0);
-  assert.equal(lyricStateAtTime(6.2, timeline).lineIndex, 1);
-  assert.equal(lyricStateAtTime(9, timeline).groupIndex, 1);
+  assert.equal(lyricStateAtTime(6.7, timeline).lineIndex, 1);
+  assert.equal(lyricStateAtTime(10, timeline).groupIndex, 1);
   assert.equal(lyricStateAtTime(18, timeline).groupIndex, 2);
 });
 
@@ -128,6 +128,37 @@ test("lyric state follows measured line starts instead of equal slices", () => {
   assert.ok(lyricStateAtTime(11.6, timeline).lineProgress < 0.1);
 });
 
+test("karaoke progress finishes at the sung line ending instead of stretching through the breath", () => {
+  const timeline = [
+    {
+      cycle: 1,
+      groupIndex: 0,
+      lines: ["第一句", "第二句"],
+      section: "prayer",
+      start: 10,
+      end: 20,
+      lineStarts: [10, 15],
+      lineEnds: [12, 18],
+    },
+  ];
+
+  assert.equal(lyricStateAtTime(14, timeline).lineIndex, 0);
+  assert.equal(lyricStateAtTime(14, timeline).lineProgress, 1);
+  assert.equal(lyricStateAtTime(16.5, timeline).lineIndex, 1);
+  assert.equal(lyricStateAtTime(16.5, timeline).lineProgress, 0.5);
+});
+
+test("repeated lyric sections offset measured line endings with their starts", () => {
+  const timeline = buildLyricTimeline(
+    [["第一句", "第二句"]],
+    [{ start: 0, end: 5, lineStarts: [0, 2], lineEnds: [1.5, 4.5] }],
+    [10],
+  );
+
+  assert.deepEqual(timeline[0].lineStarts, [10, 12]);
+  assert.deepEqual(timeline[0].lineEnds, [11.5, 14.5]);
+});
+
 test("the measured three-cycle timeline follows the recorded vocal entrances", () => {
   const timeline = buildMeasuredLyricTimeline(
     CHINESE_LYRIC_GROUPS,
@@ -137,7 +168,7 @@ test("the measured three-cycle timeline follows the recorded vocal entrances", (
   assert.equal(timeline.length, 30);
   assert.deepEqual(
     [
-      lyricStateAtTime(30.3, timeline),
+      lyricStateAtTime(30.5, timeline),
       lyricStateAtTime(168.1, timeline),
       lyricStateAtTime(305.4, timeline),
       lyricStateAtTime(433, timeline),
@@ -148,5 +179,25 @@ test("the measured three-cycle timeline follows the recorded vocal entrances", (
       [3, 0, 2],
       [3, 9, 3],
     ],
+  );
+});
+
+test("the first recitation advances on the MP3 vocal entrances rather than the old visual cuts", () => {
+  const timeline = buildMeasuredLyricTimeline(
+    CHINESE_LYRIC_GROUPS,
+    LYRIC_CYCLE_TIMINGS,
+  );
+
+  const beforeSecondBuddha = lyricStateAtTime(43.7, timeline);
+  const secondBuddha = lyricStateAtTime(43.95, timeline);
+
+  assert.deepEqual(
+    [beforeSecondBuddha.groupIndex, beforeSecondBuddha.lineIndex],
+    [1, 0],
+  );
+  assert.equal(beforeSecondBuddha.lineProgress, 1);
+  assert.deepEqual(
+    [secondBuddha.groupIndex, secondBuddha.lineIndex],
+    [1, 1],
   );
 });
