@@ -42,3 +42,59 @@ export function visualEnergy(low, mid, high, isPlaying) {
   if (!isPlaying) return 0;
   return clamp(low * 0.4 + mid * 0.3 + high * 0.3, 0, 1);
 }
+
+export function buildLyricTimeline(groups, timings, cycleOffsets) {
+  return cycleOffsets.flatMap((offset, cycleIndex) =>
+    groups.map((lines, groupIndex) => ({
+      cycle: cycleIndex + 1,
+      groupIndex,
+      lines,
+      start: timings[groupIndex].start + offset,
+      end: timings[groupIndex].end + offset,
+    })),
+  );
+}
+
+export function lyricStateAtTime(currentTime, timeline) {
+  const safeTime = Number.isFinite(currentTime) ? Math.max(0, currentTime) : 0;
+  const first = timeline[0];
+
+  if (!first || safeTime < first.start) {
+    return {
+      active: false,
+      cycle: first?.cycle ?? 1,
+      groupIndex: first?.groupIndex ?? 0,
+      lineIndex: 0,
+      lineProgress: 0,
+      phase: "prelude",
+    };
+  }
+
+  let cueIndex = 0;
+  while (
+    cueIndex + 1 < timeline.length &&
+    timeline[cueIndex + 1].start <= safeTime
+  ) {
+    cueIndex += 1;
+  }
+
+  const cue = timeline[cueIndex];
+  const duration = Math.max(0.001, cue.end - cue.start);
+  const groupProgress = clamp((safeTime - cue.start) / duration, 0, 1);
+  const linePosition = groupProgress * cue.lines.length;
+  const lineIndex = Math.min(
+    cue.lines.length - 1,
+    Math.max(0, Math.floor(linePosition)),
+  );
+  const active = safeTime <= cue.end;
+  const hasNext = cueIndex + 1 < timeline.length;
+
+  return {
+    active,
+    cycle: cue.cycle,
+    groupIndex: cue.groupIndex,
+    lineIndex,
+    lineProgress: active ? clamp(linePosition - lineIndex, 0, 1) : 1,
+    phase: active ? "prayer" : hasNext ? "interlude" : "outro",
+  };
+}

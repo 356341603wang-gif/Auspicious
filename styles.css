@@ -161,6 +161,10 @@ input:focus-visible {
   z-index: 4;
   width: min(34vw, 490px);
   transform: translateY(-51%);
+  transition:
+    opacity 620ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 760ms cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 620ms;
 }
 
 .title-kicker {
@@ -202,6 +206,121 @@ h1 {
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
   font-size: 11px;
   letter-spacing: 0.18em;
+}
+
+.lyrics-panel {
+  position: absolute;
+  left: clamp(34px, 7vw, 112px);
+  top: 50%;
+  z-index: 5;
+  width: min(37vw, 530px);
+  padding-left: 24px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-18px, -47%);
+  transition:
+    opacity 720ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 880ms cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 720ms;
+}
+
+.lyrics-panel::before {
+  position: absolute;
+  left: 0;
+  top: 1px;
+  bottom: 0;
+  width: 1px;
+  content: "";
+  background: linear-gradient(
+    to bottom,
+    rgba(192, 142, 58, 0.8),
+    rgba(192, 142, 58, 0.12) 72%,
+    transparent
+  );
+}
+
+.lyrics-meta {
+  display: flex;
+  gap: 18px;
+  align-items: baseline;
+  margin-bottom: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+}
+
+.lyrics-meta span {
+  color: var(--ochre);
+}
+
+.lyrics-meta strong {
+  color: var(--clay);
+  font-size: inherit;
+  font-weight: 400;
+}
+
+.lyrics-lines {
+  min-height: 180px;
+  display: grid;
+  gap: 8px;
+  align-content: center;
+}
+
+.lyrics-lines p {
+  --line-progress: 0%;
+  margin: 0;
+  color: rgba(212, 184, 149, 0.34);
+  font-size: clamp(18px, 1.65vw, 26px);
+  line-height: 1.38;
+  letter-spacing: 0.06em;
+  text-shadow: 0 8px 30px rgba(16, 17, 14, 0.34);
+  transform-origin: left center;
+  transition:
+    color 460ms ease,
+    opacity 460ms ease,
+    transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lyrics-lines p.is-past {
+  color: rgba(212, 184, 149, 0.55);
+}
+
+.lyrics-lines p.is-active {
+  color: transparent;
+  background: linear-gradient(
+    to right,
+    var(--sand) 0 var(--line-progress),
+    rgba(232, 220, 199, 0.26) var(--line-progress) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  transform: translateX(8px) scale(1.055);
+}
+
+.lyrics-hint {
+  margin: 21px 0 0;
+  color: rgba(176, 139, 110, 0.66);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+}
+
+[data-lyrics-visible="true"] .title-panel {
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-24px, -54%);
+}
+
+[data-lyrics-visible="true"] .lyrics-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(0, -47%);
+}
+
+[data-lyrics-phase="prelude"] .lyrics-lines p,
+[data-lyrics-phase="interlude"] .lyrics-lines p,
+[data-lyrics-phase="outro"] .lyrics-lines p {
+  color: rgba(212, 184, 149, 0.26);
 }
 
 .deity-stage {
@@ -717,6 +836,31 @@ h1 {
     transform: none;
   }
 
+  .lyrics-panel {
+    left: 24px;
+    top: 112px;
+    width: min(66vw, 480px);
+    padding-left: 18px;
+    transform: translateX(-16px);
+  }
+
+  [data-lyrics-visible="true"] .title-panel {
+    transform: translateY(-14px);
+  }
+
+  [data-lyrics-visible="true"] .lyrics-panel {
+    transform: none;
+  }
+
+  .lyrics-lines {
+    min-height: 148px;
+    gap: 5px;
+  }
+
+  .lyrics-lines p {
+    font-size: clamp(16px, 3.1vw, 22px);
+  }
+
   .title-kicker,
   .title-note {
     display: none;
@@ -779,6 +923,44 @@ h1 {
 
   .title-panel {
     top: 72px;
+  }
+
+  .lyrics-panel {
+    right: 20px;
+    left: 20px;
+    top: 74px;
+    width: auto;
+    padding: 13px 14px 15px 17px;
+    border-radius: 2px 16px 16px 2px;
+    background: linear-gradient(
+      90deg,
+      rgba(43, 43, 39, 0.82),
+      rgba(43, 43, 39, 0.42) 74%,
+      transparent
+    );
+    backdrop-filter: blur(5px);
+  }
+
+  .lyrics-meta {
+    margin-bottom: 9px;
+  }
+
+  .lyrics-lines {
+    min-height: 118px;
+    gap: 2px;
+  }
+
+  .lyrics-lines p {
+    font-size: clamp(14px, 4.15vw, 18px);
+    line-height: 1.32;
+  }
+
+  .lyrics-lines p.is-active {
+    transform: translateX(5px) scale(1.025);
+  }
+
+  .lyrics-hint {
+    margin-top: 8px;
   }
 
   .tibetan-title {

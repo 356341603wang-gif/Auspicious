@@ -1,10 +1,17 @@
 import {
+  buildLyricTimeline,
   createLotusGeometry,
   formatTime,
+  lyricStateAtTime,
   progressRatio,
   seekFromPointer,
   visualEnergy,
 } from "./player-core.js";
+import {
+  CHINESE_LYRIC_GROUPS,
+  LYRIC_CYCLE_OFFSETS,
+  LYRIC_GROUP_TIMINGS,
+} from "./lyrics.js";
 
 const FALLBACK_DURATION = 438.079;
 const root = document.documentElement;
@@ -21,7 +28,15 @@ const progress = document.querySelector("#progress");
 const currentTimeLabel = document.querySelector("#currentTime");
 const durationLabel = document.querySelector("#duration");
 const statusMessage = document.querySelector("#statusMessage");
+const lyricCycle = document.querySelector("#lyricCycle");
+const lyricLines = document.querySelector("#lyricLines");
+const lyricHint = document.querySelector("#lyricHint");
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const lyricTimeline = buildLyricTimeline(
+  CHINESE_LYRIC_GROUPS,
+  LYRIC_GROUP_TIMINGS,
+  LYRIC_CYCLE_OFFSETS,
+);
 
 let audioContext;
 let analyser;
@@ -30,6 +45,10 @@ let animationFrame = 0;
 let isVisible = !document.hidden;
 let lastFrame = 0;
 let isSeeking = false;
+let renderedLyricGroup = -1;
+let renderedLyricCycle = -1;
+let renderedLyricLine = -1;
+let activeLyricElement;
 
 const particles = Array.from({ length: 120 }, (_, index) => ({
   angle: (index * 2.3999632297) % (Math.PI * 2),
@@ -46,6 +65,70 @@ function trackDuration() {
     : FALLBACK_DURATION;
 }
 
+function renderLyricGroup(state) {
+  if (
+    state.groupIndex === renderedLyricGroup &&
+    state.cycle === renderedLyricCycle
+  ) {
+    return;
+  }
+
+  const lines = CHINESE_LYRIC_GROUPS[state.groupIndex];
+  const fragment = document.createDocumentFragment();
+  lines.forEach((line) => {
+    const paragraph = document.createElement("p");
+    paragraph.textContent = line;
+    fragment.append(paragraph);
+  });
+  lyricLines.replaceChildren(fragment);
+  renderedLyricGroup = state.groupIndex;
+  renderedLyricCycle = state.cycle;
+  renderedLyricLine = -1;
+  activeLyricElement = undefined;
+}
+
+function updateLyricState() {
+  const state = lyricStateAtTime(audio.currentTime, lyricTimeline);
+  renderLyricGroup(state);
+
+  const showLyrics = audio.currentTime > 0.05 || !audio.paused;
+  root.dataset.lyricsVisible = String(showLyrics);
+  root.dataset.lyricsPhase = state.phase;
+
+  if (state.phase === "prelude") {
+    lyricCycle.textContent = "音乐引子";
+    lyricHint.textContent = "正文即将开始";
+  } else if (state.phase === "interlude") {
+    lyricCycle.textContent = `第 ${state.cycle} 遍`;
+    lyricHint.textContent = "稍息 · 下一遍即将开始";
+  } else if (state.phase === "outro") {
+    lyricCycle.textContent = "三遍圆满";
+    lyricHint.textContent = "吉祥圆满";
+  } else {
+    lyricCycle.textContent = `第 ${state.cycle} 遍`;
+    lyricHint.textContent = `${state.groupIndex + 1} / ${CHINESE_LYRIC_GROUPS.length}`;
+  }
+
+  const paragraphs = lyricLines.querySelectorAll("p");
+  if (state.active && renderedLyricLine !== state.lineIndex) {
+    paragraphs.forEach((paragraph, index) => {
+      paragraph.classList.toggle("is-active", index === state.lineIndex);
+      paragraph.classList.toggle("is-past", index < state.lineIndex);
+    });
+    renderedLyricLine = state.lineIndex;
+    activeLyricElement = paragraphs[state.lineIndex];
+  } else if (!state.active && renderedLyricLine !== -1) {
+    paragraphs.forEach((paragraph) => paragraph.classList.remove("is-active"));
+    renderedLyricLine = -1;
+    activeLyricElement = undefined;
+  }
+
+  activeLyricElement?.style.setProperty(
+    "--line-progress",
+    `${(state.lineProgress * 100).toFixed(2)}%`,
+  );
+}
+
 function updateMediaState() {
   const duration = trackDuration();
   const ratio = progressRatio(audio.currentTime, duration);
@@ -59,6 +142,7 @@ function updateMediaState() {
   root.dataset.playing = String(isPlaying);
   playButton.setAttribute("aria-label", isPlaying ? "暂停音频" : "播放音频");
   playLabel.textContent = isPlaying ? "暂停" : "聆听";
+  updateLyricState();
 }
 
 async function ensureAudioGraph() {
@@ -164,6 +248,7 @@ function drawAmbient(timestamp) {
     return;
   }
   lastFrame = timestamp;
+  updateLyricState();
   resizeCanvas();
 
   const width = window.innerWidth;
