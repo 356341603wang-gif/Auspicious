@@ -16,6 +16,19 @@ test("the experience omits nonessential explanatory copy", async () => {
   assert.match(html, /aria-label="聆听唱诵"/);
 });
 
+test("the subtitle carries the requested practice instruction", async () => {
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+
+  assert.match(
+    html,
+    /任作何事之始，若先念诵一遍，便能顺利如愿成就，故当铭记于心。/,
+  );
+  assert.doesNotMatch(html, /中文颂文·三遍念诵/);
+  assert.match(html, /<p><span>任作何事之始/);
+  assert.match(css, /\.resonance-heading p span\s*\{/);
+});
+
 test("the page uses the same resonant layout structure as the prayer reference", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");

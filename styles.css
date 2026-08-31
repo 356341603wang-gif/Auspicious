@@ -41,8 +41,9 @@ button, input { font: inherit; }
 
 .resonance-heading > span { display: block; margin-bottom: 14px; color: #e6bd78; font-family: "Songti SC", "STSong", serif; font-size: 10px; font-weight: 500; line-height: 1; letter-spacing: 0.24em; }
 .resonance-heading h1 { display: flex; align-items: center; max-width: 560px; min-height: 54px; margin: 0; font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif; font-size: clamp(2.6rem, 3.4vw, 4.2rem); font-weight: 500; line-height: 0.94; letter-spacing: 0.08em; }
-.resonance-heading p { display: flex; align-items: center; gap: 12px; margin: 22px 0 0; color: rgb(255 240 211 / 72%); font-family: "Songti SC", "STSong", serif; font-size: clamp(12px, 1vw, 15px); font-weight: 400; line-height: 1.4; letter-spacing: 0.12em; }
-.resonance-heading p::before { width: 26px; height: 1px; content: ""; background: #d8aa63; opacity: 0.7; }
+.resonance-heading p { display: flex; align-items: flex-start; gap: 12px; margin: 22px 0 0; color: rgb(255 240 211 / 72%); font-family: "Songti SC", "STSong", serif; font-size: clamp(12px, 1vw, 15px); font-weight: 400; line-height: 1.65; letter-spacing: 0.08em; }
+.resonance-heading p::before { width: 26px; height: 1px; margin-top: 0.75em; flex: 0 0 auto; content: ""; background: #d8aa63; opacity: 0.7; }
+.resonance-heading p span { display: block; width: min(420px, calc(47vw - 38px)); min-width: 0; text-wrap: balance; }
 
 .resonance-prayer {
   position: absolute;

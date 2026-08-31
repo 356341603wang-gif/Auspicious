@@ -3,7 +3,7 @@
 import {
   FORCED_LYRIC_CYCLE_LINES,
   FORCED_OPENING_TIMINGS,
-} from "./lyric-forced-timings.js?v=12";
+} from "./lyric-forced-timings.js?v=13";
 
 export const OPENING_MANTRA_GROUPS = Array.from({ length: 3 }, () => [
   "嗡 桑巴 Ra 桑巴 Ra 波玛纳萨 Ra",
@@ -17,7 +17,7 @@ export const CHINESE_LYRIC_GROUPS = [
     "嗡",
     "现有清净自性任运成",
     "安住十方吉祥刹土中",
-    "诸佛正法僧伽圣者众",
+    "诸佛正法僧伽贤圣众",
     "顶礼一切愿我等吉祥",
   ],
   [
@@ -52,13 +52,13 @@ export const CHINESE_LYRIC_GROUPS = [
   ],
   [
     "殊胜标帜八胜吉祥宝",
-    "供养十方佛陀圣尊女",
+    "供养十方佛陀圣嬉女",
     "仅念等性慧命增吉祥",
     "八大吉祥天女敬顶礼",
   ],
   [
     "大梵大自在天遍入天",
-    "千目帝释持国天王",
+    "千目帝释与持国天王",
     "增长天王龙王广目天",
     "多闻天王各持天宝物",
   ],

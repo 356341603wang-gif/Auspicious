@@ -57,7 +57,7 @@ test("the Chinese lyrics match the ten groups shown in the source video", () => 
     "嗡",
     "现有清净自性任运成",
     "安住十方吉祥刹土中",
-    "诸佛正法僧伽圣者众",
+    "诸佛正法僧伽贤圣众",
     "顶礼一切愿我等吉祥",
   ]);
   assert.deepEqual(CHINESE_LYRIC_GROUPS.at(-1), [
@@ -66,6 +66,9 @@ test("the Chinese lyrics match the ten groups shown in the source video", () => 
     "顺缘增长所愿如意成",
     "祈愿吉祥如意悉圆满",
   ]);
+  assert.equal(CHINESE_LYRIC_GROUPS[0][3], "诸佛正法僧伽贤圣众");
+  assert.equal(CHINESE_LYRIC_GROUPS[6][1], "供养十方佛陀圣嬉女");
+  assert.equal(CHINESE_LYRIC_GROUPS[7][1], "千目帝释与持国天王");
 });
 
 test("the ten source-video groups expand across all three recitations", () => {
@@ -203,7 +206,7 @@ test("the measured three-cycle timeline follows the recorded vocal entrances", (
   assert.equal(timeline.length, 30);
   assert.deepEqual(
     [
-      lyricStateAtTime(30.5, timeline),
+      lyricStateAtTime(30.6, timeline),
       lyricStateAtTime(168.3, timeline),
       lyricStateAtTime(305.7, timeline),
       lyricStateAtTime(433, timeline),
@@ -233,7 +236,7 @@ test("every sung Chinese character has an acoustic attack time in all three reci
   }
 });
 
-test("the visible highlight follows the forced-aligned syllables in 文殊童子具德金刚手", () => {
+test("the visible highlight follows the vocal onsets in 文殊童子具德金刚手", () => {
   const timeline = buildMeasuredLyricTimeline(
     CHINESE_LYRIC_GROUPS,
     LYRIC_CYCLE_TIMINGS,
@@ -244,8 +247,24 @@ test("the visible highlight follows the forced-aligned syllables in 文殊童子
   assert.equal(duringFourthSyllable.cycle, 1);
   assert.equal(duringFourthSyllable.groupIndex, 3);
   assert.equal(duringFourthSyllable.lineIndex, 0);
-  assert.ok(duringFourthSyllable.lineProgress > 0.36);
-  assert.ok(duringFourthSyllable.lineProgress < 0.41);
+  assert.ok(duringFourthSyllable.lineProgress > 0.33);
+  assert.ok(duringFourthSyllable.lineProgress < 0.36);
+});
+
+test("the visible highlight follows the Tibetan cadence in 遂愿威力吉祥名称佛", () => {
+  const timeline = buildMeasuredLyricTimeline(
+    CHINESE_LYRIC_GROUPS,
+    LYRIC_CYCLE_TIMINGS,
+  );
+
+  const afterTheEighthSyllableStarts = lyricStateAtTime(60.7, timeline);
+
+  assert.equal(CHINESE_LYRIC_GROUPS[2][1], "遂愿威力吉祥名称佛");
+  assert.equal(afterTheEighthSyllableStarts.cycle, 1);
+  assert.equal(afterTheEighthSyllableStarts.groupIndex, 2);
+  assert.equal(afterTheEighthSyllableStarts.lineIndex, 1);
+  assert.ok(afterTheEighthSyllableStarts.lineProgress > 0.75);
+  assert.ok(afterTheEighthSyllableStarts.lineProgress < 0.82);
 });
 
 test("the first recitation advances on the MP3 vocal entrances rather than the old visual cuts", () => {
@@ -254,8 +273,8 @@ test("the first recitation advances on the MP3 vocal entrances rather than the o
     LYRIC_CYCLE_TIMINGS,
   );
 
-  const beforeSecondBuddha = lyricStateAtTime(44.3, timeline);
-  const secondBuddha = lyricStateAtTime(44.5, timeline);
+  const beforeSecondBuddha = lyricStateAtTime(44.0, timeline);
+  const secondBuddha = lyricStateAtTime(44.2, timeline);
 
   assert.deepEqual(
     [beforeSecondBuddha.groupIndex, beforeSecondBuddha.lineIndex],

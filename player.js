@@ -7,13 +7,13 @@ import {
   outwardRingProgress,
   progressRatio,
   seekFromPointer,
-} from "./player-core.js?v=12";
+} from "./player-core.js?v=13";
 import {
   CHINESE_LYRIC_GROUPS,
   LYRIC_CYCLE_TIMINGS,
   OPENING_MANTRA_GROUPS,
   OPENING_MANTRA_TIMINGS,
-} from "./lyrics.js?v=12";
+} from "./lyrics.js?v=13";
 
 const ARTWORK_URL = "./manjushri-statue.jpg";
 const FALLBACK_DURATION = 438.079;
