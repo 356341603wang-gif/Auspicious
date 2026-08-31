@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#2b2b27" />
+    <meta
+      name="description"
+      content="八圣吉祥颂三遍念诵·纯音频沉浸式聆听"
+    />
+    <meta property="og:type" content="music.song" />
+    <meta property="og:title" content="八圣吉祥颂" />
+    <meta property="og:description" content="三遍念诵·纯音频" />
+    <meta property="og:image" content="./manjushri-statue.jpg" />
+    <title>八圣吉祥颂</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link
+      rel="preload"
+      as="image"
+      href="./manjushri-statue.jpg"
+      fetchpriority="high"
+    />
+    <link rel="preload" as="font" href="./noto-serif-tibetan-variable.ttf" crossorigin />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./player.js"></script>
+  </head>
+  <body>
+    <div id="intro" class="intro" aria-hidden="true">
+      <div class="intro-rays">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+      <div class="intro-seed" lang="bo">དྷཱིཿ</div>
+      <p>八圣吉祥颂</p>
+    </div>
+
+    <main class="experience" aria-labelledby="trackTitle">
+      <canvas id="ambientCanvas" aria-hidden="true"></canvas>
+      <div class="ambient-halo" aria-hidden="true"></div>
+
+      <header class="masthead">
+        <div class="chapter-mark" aria-hidden="true">八</div>
+        <div>
+          <p>八圣吉祥颂</p>
+          <span>三遍念诵</span>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div class="title-panel">
+          <p class="title-kicker">吉祥·智慧·愿行</p>
+          <h1 id="trackTitle">
+            <span class="tibetan-title" lang="bo">
+              འཕགས་པ་བཀྲ་ཤིས་བརྒྱད་པ།
+            </span>
+            <span class="chinese-title">八圣吉祥颂</span>
+          </h1>
+          <p class="title-note">全知麦彭仁波切造 · 三遍念诵</p>
+        </div>
+
+        <figure id="visualStage" class="deity-stage">
+          <div class="orbit orbit-one" aria-hidden="true"></div>
+          <div class="orbit orbit-two" aria-hidden="true"></div>
+          <div class="lotus-points" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="deity-image-wrap">
+            <img
+              src="./manjushri-statue.jpg"
+              alt="鎏金文殊菩萨塑像"
+              width="3200"
+              height="4000"
+              loading="eager"
+              decoding="async"
+              fetchpriority="high"
+            />
+          </div>
+          <figcaption>文殊菩萨·智慧</figcaption>
+        </figure>
+
+        <p class="side-inscription" lang="bo">བཀྲ་ཤིས་ཤོག</p>
+      </section>
+
+      <footer class="player-dock" aria-label="音频播放器">
+        <button
+          id="playButton"
+          class="play-button"
+          type="button"
+          aria-label="播放音频"
+        >
+          <span class="play-glyph" aria-hidden="true">
+            <svg class="icon-play" viewBox="0 0 24 24">
+              <path d="M8.5 6.2v11.6L18 12z" />
+            </svg>
+            <svg class="icon-pause" viewBox="0 0 24 24">
+              <path d="M7.5 6.5h3v11h-3zm6 0h3v11h-3z" />
+            </svg>
+          </span>
+          <span id="playLabel">聆听</span>
+        </button>
+
+        <div class="timeline-wrap">
+          <input
+            id="progress"
+            type="range"
+            min="0"
+            max="438.079"
+            step="0.01"
+            value="0"
+            aria-label="音频进度"
+          />
+          <div class="time-row">
+            <span id="currentTime">0:00</span>
+            <span id="statusMessage" role="status">点击聆听</span>
+            <span id="duration">7:18</span>
+          </div>
+        </div>
+
+        <button
+          id="muteButton"
+          class="sound-button"
+          type="button"
+          aria-label="静音"
+          aria-pressed="false"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path class="speaker" d="M5 9.5h3.2l4-3.3v11.6l-4-3.3H5z" />
+            <path class="sound-wave" d="M15.2 9a4 4 0 0 1 0 6M17.8 6.8a7 7 0 0 1 0 10.4" />
+            <path class="mute-line" d="m15 9 5 6m0-6-5 6" />
+          </svg>
+        </button>
+
+        <button id="retryButton" class="retry-button" type="button" hidden>
+          重新加载
+        </button>
+      </footer>
+
+      <audio
+        id="audio"
+        src="./eight-auspicious-prayer.mp3"
+        preload="metadata"
+      ></audio>
+    </main>
+  </body>
+</html>
