@@ -1,7 +1,7 @@
 // Chinese wording transcribed directly from the source video supplied by the user:
 // https://www.youtube.com/watch?v=basXlxiKoTA
 export const OPENING_MANTRA_GROUPS = Array.from({ length: 3 }, () => [
-  "嗡 桑巴囸 桑巴囸 波玛纳萨囸",
+  "嗡 桑巴 Ra 桑巴 Ra 波玛纳萨 Ra",
   "玛哈臧巴巴吽啪德娑哈",
 ]);
 

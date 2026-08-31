@@ -15,7 +15,7 @@ import {
 test("the source video's three opening multiplier mantras precede the prayer", () => {
   assert.equal(OPENING_MANTRA_GROUPS.length, 3);
   assert.deepEqual(OPENING_MANTRA_GROUPS[0], [
-    "嗡 桑巴囸 桑巴囸 波玛纳萨囸",
+    "嗡 桑巴 Ra 桑巴 Ra 波玛纳萨 Ra",
     "玛哈臧巴巴吽啪德娑哈",
   ]);
   assert.deepEqual(OPENING_MANTRA_GROUPS[1], OPENING_MANTRA_GROUPS[0]);
