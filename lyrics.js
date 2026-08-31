@@ -1,5 +1,16 @@
 // Chinese wording transcribed directly from the source video supplied by the user:
 // https://www.youtube.com/watch?v=basXlxiKoTA
+export const OPENING_MANTRA_GROUPS = Array.from({ length: 3 }, () => [
+  "嗡 桑巴囸 桑巴囸 波玛纳萨囸",
+  "玛哈臧巴巴吽啪德娑哈",
+]);
+
+export const OPENING_MANTRA_TIMINGS = [
+  { start: 0, end: 8.5 },
+  { start: 8.5, end: 17 },
+  { start: 17, end: 25.5 },
+];
+
 export const CHINESE_LYRIC_GROUPS = [
   [
     "嗡",

@@ -11,6 +11,8 @@ import {
   CHINESE_LYRIC_GROUPS,
   LYRIC_CYCLE_OFFSETS,
   LYRIC_GROUP_TIMINGS,
+  OPENING_MANTRA_GROUPS,
+  OPENING_MANTRA_TIMINGS,
 } from "./lyrics.js";
 
 const FALLBACK_DURATION = 438.079;
@@ -32,11 +34,19 @@ const lyricCycle = document.querySelector("#lyricCycle");
 const lyricLines = document.querySelector("#lyricLines");
 const lyricHint = document.querySelector("#lyricHint");
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
-const lyricTimeline = buildLyricTimeline(
-  CHINESE_LYRIC_GROUPS,
-  LYRIC_GROUP_TIMINGS,
-  LYRIC_CYCLE_OFFSETS,
-);
+const lyricTimeline = [
+  ...buildLyricTimeline(
+    OPENING_MANTRA_GROUPS,
+    OPENING_MANTRA_TIMINGS,
+    [0],
+    "opening",
+  ),
+  ...buildLyricTimeline(
+    CHINESE_LYRIC_GROUPS,
+    LYRIC_GROUP_TIMINGS,
+    LYRIC_CYCLE_OFFSETS,
+  ),
+];
 
 let audioContext;
 let analyser;
@@ -48,6 +58,7 @@ let isSeeking = false;
 let renderedLyricGroup = -1;
 let renderedLyricCycle = -1;
 let renderedLyricLine = -1;
+let renderedLyricSection = "";
 let activeLyricElement;
 
 const particles = Array.from({ length: 120 }, (_, index) => ({
@@ -68,12 +79,15 @@ function trackDuration() {
 function renderLyricGroup(state) {
   if (
     state.groupIndex === renderedLyricGroup &&
-    state.cycle === renderedLyricCycle
+    state.cycle === renderedLyricCycle &&
+    state.phase === renderedLyricSection
   ) {
     return;
   }
 
-  const lines = CHINESE_LYRIC_GROUPS[state.groupIndex];
+  const lines = state.phase === "opening"
+    ? OPENING_MANTRA_GROUPS[state.groupIndex]
+    : CHINESE_LYRIC_GROUPS[state.groupIndex];
   const fragment = document.createDocumentFragment();
   lines.forEach((line) => {
     const paragraph = document.createElement("p");
@@ -83,6 +97,7 @@ function renderLyricGroup(state) {
   lyricLines.replaceChildren(fragment);
   renderedLyricGroup = state.groupIndex;
   renderedLyricCycle = state.cycle;
+  renderedLyricSection = state.phase;
   renderedLyricLine = -1;
   activeLyricElement = undefined;
 }
@@ -95,7 +110,10 @@ function updateLyricState() {
   root.dataset.lyricsVisible = String(showLyrics);
   root.dataset.lyricsPhase = state.phase;
 
-  if (state.phase === "prelude") {
+  if (state.phase === "opening") {
+    lyricCycle.textContent = `加倍咒 · ${state.groupIndex + 1} / 3`;
+    lyricHint.textContent = "三遍后进入八圣吉祥颂正文";
+  } else if (state.phase === "prelude") {
     lyricCycle.textContent = "音乐引子";
     lyricHint.textContent = "正文即将开始";
   } else if (state.phase === "interlude") {

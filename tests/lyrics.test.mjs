@@ -8,7 +8,30 @@ import {
   CHINESE_LYRIC_GROUPS,
   LYRIC_CYCLE_OFFSETS,
   LYRIC_GROUP_TIMINGS,
+  OPENING_MANTRA_GROUPS,
+  OPENING_MANTRA_TIMINGS,
 } from "../lyrics.js";
+
+test("the source video's three opening multiplier mantras precede the prayer", () => {
+  assert.equal(OPENING_MANTRA_GROUPS.length, 3);
+  assert.deepEqual(OPENING_MANTRA_GROUPS[0], [
+    "嗡 桑巴囸 桑巴囸 波玛纳萨囸",
+    "玛哈臧巴巴吽啪德娑哈",
+  ]);
+  assert.deepEqual(OPENING_MANTRA_GROUPS[1], OPENING_MANTRA_GROUPS[0]);
+  assert.deepEqual(OPENING_MANTRA_GROUPS[2], OPENING_MANTRA_GROUPS[0]);
+
+  const timeline = buildLyricTimeline(
+    OPENING_MANTRA_GROUPS,
+    OPENING_MANTRA_TIMINGS,
+    [0],
+    "opening",
+  );
+  assert.equal(timeline.length, 3);
+  assert.equal(lyricStateAtTime(1, timeline).phase, "opening");
+  assert.equal(lyricStateAtTime(9, timeline).groupIndex, 1);
+  assert.equal(lyricStateAtTime(18, timeline).groupIndex, 2);
+});
 
 test("the Chinese lyrics match the ten groups shown in the source video", () => {
   assert.equal(CHINESE_LYRIC_GROUPS.length, 10);

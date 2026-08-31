@@ -43,12 +43,18 @@ export function visualEnergy(low, mid, high, isPlaying) {
   return clamp(low * 0.4 + mid * 0.3 + high * 0.3, 0, 1);
 }
 
-export function buildLyricTimeline(groups, timings, cycleOffsets) {
+export function buildLyricTimeline(
+  groups,
+  timings,
+  cycleOffsets,
+  section = "prayer",
+) {
   return cycleOffsets.flatMap((offset, cycleIndex) =>
     groups.map((lines, groupIndex) => ({
       cycle: cycleIndex + 1,
       groupIndex,
       lines,
+      section,
       start: timings[groupIndex].start + offset,
       end: timings[groupIndex].end + offset,
     })),
@@ -95,6 +101,6 @@ export function lyricStateAtTime(currentTime, timeline) {
     groupIndex: cue.groupIndex,
     lineIndex,
     lineProgress: active ? clamp(linePosition - lineIndex, 0, 1) : 1,
-    phase: active ? "prayer" : hasNext ? "interlude" : "outro",
+    phase: active ? cue.section : hasNext ? "interlude" : "outro",
   };
 }
