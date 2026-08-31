@@ -57,6 +57,12 @@ export function seekFromPointer(clientX, left, width, duration) {
   return clamp((clientX - left) / width, 0, 1) * Math.max(0, duration);
 }
 
+export function shouldTogglePlayback(eventType, pointerType, elapsedSinceTouch) {
+  if (eventType === "pointerup") return pointerType === "touch";
+  if (eventType === "click") return elapsedSinceTouch > 700;
+  return false;
+}
+
 export function createLotusGeometry(count = 8, radius = 1) {
   return Array.from({ length: Math.max(0, count) }, (_, index) => {
     const angle = -Math.PI / 2 + (Math.PI * 2 * index) / count;

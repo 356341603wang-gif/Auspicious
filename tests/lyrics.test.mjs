@@ -251,7 +251,7 @@ test("the visible highlight follows the vocal onsets in 文殊童子具德金刚
   assert.ok(duringFourthSyllable.lineProgress < 0.36);
 });
 
-test("the visible highlight follows the Tibetan cadence in 遂愿威力吉祥名称佛", () => {
+test("the visible highlight follows the Tibetan cadence in 遂愿威力名称吉祥佛", () => {
   const timeline = buildMeasuredLyricTimeline(
     CHINESE_LYRIC_GROUPS,
     LYRIC_CYCLE_TIMINGS,
@@ -259,7 +259,7 @@ test("the visible highlight follows the Tibetan cadence in 遂愿威力吉祥名
 
   const afterTheEighthSyllableStarts = lyricStateAtTime(60.7, timeline);
 
-  assert.equal(CHINESE_LYRIC_GROUPS[2][1], "遂愿威力吉祥名称佛");
+  assert.equal(CHINESE_LYRIC_GROUPS[2][1], "遂愿威力名称吉祥佛");
   assert.equal(afterTheEighthSyllableStarts.cycle, 1);
   assert.equal(afterTheEighthSyllableStarts.groupIndex, 2);
   assert.equal(afterTheEighthSyllableStarts.lineIndex, 1);

@@ -9,8 +9,16 @@ import {
   progressRatio,
   seekFromPointer,
   shouldShowLyrics,
+  shouldTogglePlayback,
   visualEnergy,
 } from "../player-core.js";
+
+test("touch pointerup toggles playback when an embedded browser cancels click", () => {
+  assert.equal(shouldTogglePlayback("pointerup", "touch", Infinity), true);
+  assert.equal(shouldTogglePlayback("pointerup", "mouse", Infinity), false);
+  assert.equal(shouldTogglePlayback("click", "", 120), false);
+  assert.equal(shouldTogglePlayback("click", "", 701), true);
+});
 
 test("artworkLayout matches the prayer reference crop on desktop and mobile", () => {
   const desktop = artworkLayout(1280, 720, 3200, 4000);

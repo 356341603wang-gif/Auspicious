@@ -7,13 +7,14 @@ import {
   outwardRingProgress,
   progressRatio,
   seekFromPointer,
-} from "./player-core.js?v=13";
+  shouldTogglePlayback,
+} from "./player-core.js?v=14";
 import {
   CHINESE_LYRIC_GROUPS,
   LYRIC_CYCLE_TIMINGS,
   OPENING_MANTRA_GROUPS,
   OPENING_MANTRA_TIMINGS,
-} from "./lyrics.js?v=13";
+} from "./lyrics.js?v=14";
 
 const ARTWORK_URL = "./manjushri-statue.jpg";
 const FALLBACK_DURATION = 438.079;
@@ -69,6 +70,7 @@ let canvasStartTime = performance.now();
 let disposed = false;
 let isSeeking = false;
 let audioFailed = false;
+let lastTouchActivation = Number.NEGATIVE_INFINITY;
 let renderedLyricKey = "";
 let renderedDotIndex = -1;
 let smoothedEnergy = 0;
@@ -490,7 +492,17 @@ function seekToPointer(event) {
   updateMediaUi();
 }
 
-listen.addEventListener("click", () => void togglePlayback());
+listen.addEventListener("pointerup", (event) => {
+  if (!shouldTogglePlayback("pointerup", event.pointerType, Infinity)) return;
+  event.preventDefault();
+  lastTouchActivation = performance.now();
+  void togglePlayback();
+});
+listen.addEventListener("click", () => {
+  const elapsedSinceTouch = performance.now() - lastTouchActivation;
+  if (!shouldTogglePlayback("click", "", elapsedSinceTouch)) return;
+  void togglePlayback();
+});
 progress.addEventListener("input", () => {
   audio.currentTime = Number(progress.value);
   updateMediaUi();

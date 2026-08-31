@@ -3,7 +3,7 @@
 import {
   FORCED_LYRIC_CYCLE_LINES,
   FORCED_OPENING_TIMINGS,
-} from "./lyric-forced-timings.js?v=13";
+} from "./lyric-forced-timings.js?v=14";
 
 export const OPENING_MANTRA_GROUPS = Array.from({ length: 3 }, () => [
   "嗡 桑巴 Ra 桑巴 Ra 波玛纳萨 Ra",
@@ -28,7 +28,7 @@ export const CHINESE_LYRIC_GROUPS = [
   ],
   [
     "垂念一切有情名德佛",
-    "遂愿威力吉祥名称佛",
+    "遂愿威力名称吉祥佛",
     "仅闻名号增德增吉祥",
     "吉祥八大善逝敬顶礼",
   ],
