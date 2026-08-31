@@ -512,7 +512,8 @@ h1 {
 }
 
 .play-button {
-  min-width: 118px;
+  min-width: 56px;
+  width: 56px;
   height: 56px;
   display: flex;
   gap: 12px;
@@ -984,14 +985,6 @@ h1 {
     min-width: 54px;
     width: 54px;
     padding: 0;
-  }
-
-  .play-button > span:last-child {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
   }
 
   .time-row {

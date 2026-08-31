@@ -23,7 +23,6 @@ const canvas = document.querySelector("#ambientCanvas");
 const context = canvas.getContext("2d", { alpha: true });
 const visualStage = document.querySelector("#visualStage");
 const playButton = document.querySelector("#playButton");
-const playLabel = document.querySelector("#playLabel");
 const muteButton = document.querySelector("#muteButton");
 const retryButton = document.querySelector("#retryButton");
 const progress = document.querySelector("#progress");
@@ -159,7 +158,6 @@ function updateMediaState() {
   const isPlaying = !audio.paused;
   root.dataset.playing = String(isPlaying);
   playButton.setAttribute("aria-label", isPlaying ? "暂停音频" : "播放音频");
-  playLabel.textContent = isPlaying ? "暂停" : "聆听";
   updateLyricState();
 }
 
@@ -197,7 +195,7 @@ async function togglePlayback() {
     statusMessage.textContent = "";
     retryButton.hidden = true;
   } catch {
-    statusMessage.textContent = "点击聆听";
+    statusMessage.textContent = "";
   }
 }
 
@@ -427,7 +425,7 @@ document.addEventListener("keydown", (event) => {
 
 audio.addEventListener("loadedmetadata", () => {
   root.dataset.audioReady = "true";
-  statusMessage.textContent = "点击聆听";
+  statusMessage.textContent = "";
   updateMediaState();
 });
 audio.addEventListener("durationchange", updateMediaState);
