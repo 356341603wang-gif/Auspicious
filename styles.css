@@ -24,8 +24,24 @@ button, input { font: inherit; }
   touch-action: pan-y;
 }
 
-.resonance-canvas { position: absolute; inset: 0; z-index: 0; display: block; width: 100%; height: 100%; pointer-events: none; }
-.resonance-accessible-art { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.resonance-canvas { position: absolute; inset: 0; z-index: 1; display: block; width: 100%; height: 100%; pointer-events: none; }
+.resonance-accessible-art {
+  position: absolute;
+  top: -30.523vh;
+  left: 53%;
+  z-index: 0;
+  display: block;
+  width: auto;
+  height: 150.154vh;
+  margin: 0;
+  clip-path: inset(15% 9.375% 3.75%);
+  filter: brightness(1.08) saturate(1.1) contrast(1.1);
+  transform: translateX(-50%);
+  pointer-events: none;
+  user-select: none;
+  -webkit-mask-image: linear-gradient(to right, transparent 9.375%, #000 14%, #000 86%, transparent 90.625%);
+  mask-image: linear-gradient(to right, transparent 9.375%, #000 14%, #000 86%, transparent 90.625%);
+}
 
 .resonance-heading {
   position: absolute;
@@ -135,6 +151,7 @@ button, input { font: inherit; }
 @keyframes resonance-line { 0%, 100% { transform: scaleX(0.32); opacity: 0.55; } 50% { transform: scaleX(1); opacity: 1; } }
 
 @media (max-width: 760px) {
+  .resonance-accessible-art { top: -20.7vh; left: 55%; height: 128vh; }
   .resonance-heading { top: max(26px, env(safe-area-inset-top)); left: 22px; width: calc(100% - 44px); text-shadow: 0 2px 18px rgb(12 8 3 / 82%); }
   .resonance-heading > span { margin-bottom: 10px; font-size: 8px; }
   .resonance-heading h1 { max-width: 346px; min-height: 34px; font-size: clamp(1.7rem, 7.7vw, 2.1rem); line-height: 0.98; white-space: nowrap; }
